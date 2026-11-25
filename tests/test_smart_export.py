@@ -102,6 +102,15 @@ def test_hdr_sdr_conversion(
         count = round(clip["duration"] * 12)
         sample = decoded[offset + count // 2].astype(float)
         assert sample.std() > 12
+        swatches = sample[3:6, 10::20].mean(axis=(0, 2))
+        assert np.all(np.diff(swatches) > 4)
+        reference = pictures(corpus / "ranges" / clip["name"], (80, 48))[0, 3:6, 10::20].mean(axis=(0, 2))
+        change = np.max(abs(reference - swatches))
+        same_transfer = (clip["name"] == "pq.mp4") == (transfer == "smpte2084")
+        if same_transfer:
+            assert change < 5
+        else:
+            assert change > 9
         offset += count
 
 
@@ -135,3 +144,18 @@ def test_trim_vfr_and_audio_extension(corpus: Path, tmp_path: Path, *, force_fps
         assert [(p["pts"] - tail[0]["pts"]) * base for p in tail] == [
             (p["pts"] - expected[0]["pts"]) * src_base for p in expected
         ]
+
+
+def test_explicit_canvas_and_frame_rate(corpus: Path, tmp_path: Path) -> None:
+    output = tmp_path / "square.mp4"
+    report = stitch(corpus / "geometry", output, "--order", "natural", "--size", "128x128", "--fps", "24")
+    assert report["target"]["size"] == [128, 128]
+    assert all(not c["planned_copy"] and not c["copied"] for c in report["clips"])
+    video = probe(output, "-select_streams", "v:0", "-show_streams")["streams"][0]
+    assert (video["width"], video["height"], video["nb_frames"], video["avg_frame_rate"]) == (
+        128,
+        128,
+        "120",
+        "24/1",
+    )
+    assert len(pictures(output, (128, 128))) == 120

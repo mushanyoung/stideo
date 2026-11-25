@@ -206,9 +206,15 @@ def geometry(folder: Path) -> None:
 
 
 def ranges(folder: Path) -> None:
-    encode(folder / "pq.mp4", film("lighthouse", 30), codec="hevc", color=PQ)
-    encode(folder / "sdr-hevc.mp4", film("pines", 12), codec="hevc")
-    encode(folder / "sdr-h264.mp4", film("train", 18), codec="h264")
+    for name, subject, length, codec, color in (
+        ("pq", "lighthouse", 30, "hevc", PQ),
+        ("sdr-hevc", "pines", 12, "hevc", SDR),
+        ("sdr-h264", "train", 18, "h264", SDR),
+    ):
+        frames = film(subject, length)
+        for i, code in enumerate((48, 120, 200, 235)):
+            frames[:, :16, i * 40 : (i + 1) * 40] = code
+        encode(folder / f"{name}.mp4", frames, codec=codec, color=color)
 
 
 def timing(folder: Path) -> None:
@@ -259,18 +265,25 @@ def timing(folder: Path) -> None:
 
 def sounds(folder: Path) -> None:
     # All pictures match; the bins in the interior audio spectrum distinguish the pairs.
-    for number, tone in ((1, 220), (2, 1800), (10, 220), (20, 1800)):
+    for number, tone in ((1, 220), (2, 1800), (10, 1800), (20, 220)):
         frames = film("train", 4 * FPS)
-        encode(folder / f"sound{number}.mp4", frames, tone=tone)
+        encode(
+            folder / f"sound{number}.mp4",
+            frames,
+            tone=tone,
+            options=("-af", "volume=0:enable='lt(t,1)+gte(t,3)'"),
+        )
 
 
 def motion(folder: Path) -> None:
     # Both directions visit precisely the same cyclic texture positions over time.
     texture = np.random.default_rng(724).integers(0, 256, (12, 10, 3), np.uint8)
-    tile = cv2.resize(texture, (32, HEIGHT), interpolation=cv2.INTER_LINEAR)
-    image = np.tile(tile, (1, 5, 1))
-    for number, direction in ((1, 1), (2, -1), (10, 1), (20, -1)):
+    tile = cv2.resize(texture, (24, HEIGHT), interpolation=cv2.INTER_LINEAR)
+    image = np.tile(tile, (1, 6, 1))
+    for number, direction in ((1, 1), (2, -1), (10, -1), (20, 1)):
         frames = np.stack([np.roll(image, direction * tick * 2, axis=1) for tick in range(48)])
+        still = np.repeat(image[None], FPS, axis=0)
+        frames = np.concatenate((still, frames, still))
         encode(folder / f"pan{number}.mp4", frames, options=("-bf", "0"))
 
 

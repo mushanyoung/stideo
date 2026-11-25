@@ -51,7 +51,7 @@ def test_similarity_covers_audio_and_movement(
     corpus: Path, tmp_path: Path, dataset: str, prefix: str
 ) -> None:
     names = ids(stitch(corpus / dataset, tmp_path / "order.mp4", dry=True))
-    for first, second in ((1, 10), (2, 20)):
+    for first, second in ((1, 20), (2, 10)):
         assert abs(names.index(f"{prefix}{first}.mp4") - names.index(f"{prefix}{second}.mp4")) == 1
 
 
