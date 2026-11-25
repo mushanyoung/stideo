@@ -11,6 +11,7 @@ from pathlib import Path
 lazy from collections.abc import Sequence
 
 from stideo.commands import FFMPEG, run
+from stideo.models import DEFAULT_MODEL
 lazy from stideo import content as analysis
 lazy from stideo.media import Clip
 lazy from stideo.timing import Stage
@@ -301,23 +302,49 @@ def smooth_order(clips: list[Clip], stage: Stage = nullcontext) -> list[Clip]:
     return [clips[i] for i in path]
 
 
-def content_order(
-    clips: list[Clip], step: float, stage: Stage = nullcontext, *, offline: bool = False
-) -> tuple[list[Clip], dict[Path, str], dict[Path, int]]:
+@dataclass
+class ContentRanking:
+    path: list[int]
+    costs: Costs
+    samples: dict[Path, int]
 
-    profiles = analysis.analyze(clips, step, FFMPEG, stage, offline=offline)
+
+def content_ranking(
+    clips: list[Clip],
+    step: float,
+    stage: Stage = nullcontext,
+    *,
+    offline: bool = False,
+    model_name: str = DEFAULT_MODEL,
+) -> ContentRanking:
+    profiles = analysis.analyze(clips, step, FFMPEG, stage, offline=offline, model_name=model_name)
     samples = {c.path: p.samples for c, p in zip(clips, profiles, strict=True)}
     if len(clips) == 1:
-        return clips, {}, samples
+        return ContentRanking([0], [[0.0]], samples)
     with stage("片段首尾分析"):
         cuts = boundary_costs(clips)
     with stage("计算片段间相似度"):
         cost = analysis.content_costs(profiles, cuts)
     with stage("求解播放顺序"):
         path = exact_path(cost) if len(clips) <= EXACT_LIMIT else approximate_path(cost)
+    return ContentRanking(path, cost, samples)
+
+
+def content_order(
+    clips: list[Clip],
+    step: float,
+    stage: Stage = nullcontext,
+    *,
+    offline: bool = False,
+    model_name: str = DEFAULT_MODEL,
+) -> tuple[list[Clip], dict[Path, str], dict[Path, int]]:
+    ranking = content_ranking(clips, step, stage, offline=offline, model_name=model_name)
+    if len(clips) == 1:
+        return clips, {}, ranking.samples
+    path, cost = ranking.path, ranking.costs
     method = "当前评分下的最优解" if len(clips) <= EXACT_LIMIT else "近似解"
     transitions = list(pairwise(path))
     total = sum(cost[a][b] for a, b in transitions)
     print(f"已求出{method}，相邻片段的综合差异总分为 {total:.3f}（越小越相近）。")
     notes = {clips[b].path: f"与前一段的综合差异 {cost[a][b]:.3f}" for a, b in transitions}
-    return [clips[i] for i in path], notes, samples
+    return [clips[i] for i in path], notes, ranking.samples

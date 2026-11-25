@@ -14,13 +14,13 @@ uv run --locked --no-dev stideo "/path/to/clips" --dry-run
 uv run --locked --no-dev stideo "/path/to/clips" -o "/path/to/movie.mp4"
 ```
 
-第一次使用 `content` 会下载约 24 MB 的模型。预览会执行相同的排序和导出规划，并列出每段复制或转码的原因。省略 `-o` 时，成片写入素材目录的 `合辑/` 子目录。输出须使用新的文件名。环境准备好后，在其他目录也可以直接调用本仓库的 `.venv/bin/stideo`。
+第一次使用 `content` 会下载所选的视觉模型。预览会执行相同的排序和导出规划，并列出每段复制或转码的原因。省略 `-o` 时，成片写入素材目录的 `合辑/` 子目录。输出须使用新的文件名。环境准备好后，在其他目录也可以直接调用本仓库的 `.venv/bin/stideo`。
 
 ## 怎样决定播放顺序
 
 | 选项 | 适合的素材 | 排序依据 |
 | --- | --- | --- |
-| `--order content`（默认） | 同一批素材的拍摄顺序未知 | 整段取样，比较 DINOv2 的全画面与局部特征，以及色彩、构图、纹理、光流、声音和接缝 |
+| `--order content`（默认） | 同一批素材的拍摄顺序未知 | 整段取样，比较视觉模型特征、色彩、构图、纹理、光流、声音和接缝 |
 | `--order smooth` | 希望上一段结尾自然接到下一段开头 | 比较相邻两段首尾各 0.75 秒的画面、运动和声音 |
 | `--order natural` | 文件名已表达剪辑顺序 | 数字按数值比较，例如 `clip2` 在 `clip10` 前 |
 
@@ -43,10 +43,11 @@ uv run stideo clips --codec av1 --report run.json -o archive.mp4
 ```sh
 uv run stideo --fetch-model
 uv run stideo --offline --fetch-model
+uv run stideo clips --model mobilevit-xxs --dry-run
 uv run stideo clips --offline --dry-run
 ```
 
-模型权重来自固定修订版，以 SHA-256 校验。默认缓存为 `${XDG_CACHE_HOME:-~/.cache}/stitch-videos/models/dinov2-small-int8.onnx`。从原脚本迁移、重新克隆或新建虚拟环境都能复用同一文件。可以用 `STIDEO_MODEL_DIR` 指定模型目录，或把已经校验的同名文件拷贝到离线机器。并发首次运行只下载一次，损坏的缓存会在联网时重新获取。设置 `STIDEO_OFFLINE=1` 可以对所有运行启用离线模型检查。[固定模型版本](https://huggingface.co/Xenova/dinov2-small/tree/c2bb04a51fab207c420665f1946016107bffc701)
+模型权重来自固定修订版，以 SHA-256 校验。默认缓存在 `${XDG_CACHE_HOME:-~/.cache}/stitch-videos/models/`，每种模型使用单独的文件。原有的 `dinov2-small-int8.onnx` 可以直接复用。从原脚本迁移、重新克隆或新建虚拟环境都能复用同一文件。可以用 `STIDEO_MODEL_DIR` 指定模型目录，或把已经校验的同名文件拷贝到离线机器。并发首次运行只下载一次，损坏的缓存会在联网时重新获取。设置 `STIDEO_OFFLINE=1` 可以对所有运行启用离线模型检查。[固定模型版本](https://huggingface.co/Xenova/dinov2-small/tree/c2bb04a51fab207c420665f1946016107bffc701)
 
 ## 开发时启用 Ruff
 
@@ -57,6 +58,8 @@ uv run stideo clips --offline --dry-run
 ```sh
 uv sync --locked
 uv run stideo --fetch-model
+uv run stideo --fetch-model --model dinov2-small-int8
+uv run stideo --fetch-model --model mobilevit-xxs
 uv run --locked ruff check .
 uv run --locked ruff format --check .
 STIDEO_OFFLINE=1 uv run --locked pytest -q
@@ -84,3 +87,5 @@ uv run python -m tests.benchmark --baseline /tmp/stideo-before.json --output /tm
 ```
 
 基准覆盖三种排序和四种编码策略。默认每项完整导出三次，取进程总耗时与关键阶段的中位数，另记录模型取样数和实际复制秒数。初次模型下载和素材生成在计时之外。默认耗时阈值取基线的 50% 与 0.35 秒中的较大值，复制时长减少也会返回失败。可以用 `--repeats` 和 `--tolerance` 调整。PR 的基线和候选版本在同一个 Linux runner 上处理同一批素材，JSON 可从 Actions 下载。合成场景用于发现可重复的退化，真实拍摄素材的主观连贯性仍适合单独评估。
+
+另有 138 段用于比较模型的短视频，涵盖跨视角物体、场景、插入镜头、花卉实拍照片和速度测试。七种配置中，默认的 DINOv2 Small INT8 在 M4 留出集取得最高的同类接缝达成率（74.1%）。速度优先可用 `--model mobilevit-xxs`，它把三段素材的排序时间从 1.06 秒降到 0.52 秒，同类接缝达成率为 66.1%。[完整实测与复现方法](docs/model-evaluation.md)

@@ -1,6 +1,5 @@
 """整段内容分析。由 stideo 的 content 模式调用。"""
 
-import os
 import subprocess
 import tempfile
 import time
@@ -13,47 +12,23 @@ from typing import TYPE_CHECKING
 import cv2
 import numpy as np
 
-from stideo.models import model_file
+from stideo.models import DEFAULT_MODEL
+from stideo.vision import VisualEncoder, unit
 lazy from stideo.media import Clip
 lazy from stideo.timing import Stage
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
 
-MODEL_MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-MODEL_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 PHASES = 4
 PHASE_MATCHES = np.array(list(permutations(range(PHASES))))
 MOTION_FPS = 8
 CUT_THRESHOLD = 0.28
 
 
-def unit(values: np.ndarray) -> np.ndarray:
-    return values / np.maximum(np.linalg.norm(values, axis=-1, keepdims=True), 1e-12)
-
-
-def frame_features(rgb: np.ndarray, model: cv2.dnn.Net) -> tuple[np.ndarray, np.ndarray]:
+def frame_features(rgb: np.ndarray, model: VisualEncoder) -> tuple[np.ndarray, np.ndarray]:
     h, w = rgb.shape[:2]
-    # 模型输入是 16×16 个图块。按原画幅放入完整图像，只汇总有效图块。
-    rows, cols = max(1, round(16 * h / max(w, h))), max(1, round(16 * w / max(w, h)))
-    y, x = (16 - rows) // 2, (16 - cols) // 2
-    scaled = cv2.resize(rgb, (cols * 14, rows * 14), interpolation=cv2.INTER_AREA)
-    canvas = np.zeros((224, 224, 3), dtype=np.float32)
-    normalized = (scaled.astype(np.float32) / 255 - MODEL_MEAN) / MODEL_STD
-    canvas[y * 14 : (y + rows) * 14, x * 14 : (x + cols) * 14] = normalized
-    tensor = np.ascontiguousarray(canvas.transpose(2, 0, 1)[None])
-    model.setInput(tensor, "pixel_values")
-    output = model.forward("last_hidden_state")
-    tokens = output[0]
-    patches = unit(tokens[1:].reshape(16, 16, -1)[y : y + rows, x : x + cols])
-    regions = []
-    for i in range(2):
-        for j in range(2):
-            region = patches[
-                i * rows // 2 : ((i + 1) * rows + 1) // 2, j * cols // 2 : ((j + 1) * cols + 1) // 2
-            ]
-            regions.append(unit(region.mean(axis=(0, 1))))
-
+    semantic = model.semantic(rgb)
     small = cv2.resize(rgb, (max(4, w // 3), max(4, h // 3)), interpolation=cv2.INTER_AREA)
     lab = cv2.cvtColor(small, cv2.COLOR_RGB2LAB)
     layout = cv2.resize(lab, (4, 4), interpolation=cv2.INTER_AREA).astype(np.float32).ravel() / 255
@@ -77,9 +52,7 @@ def frame_features(rgb: np.ndarray, model: cv2.dnn.Net) -> tuple[np.ndarray, np.
     # 整帧、全部图块、四个象限、颜色、纹理分别归一化，再按权重合并。
     visual = np.concatenate(
         [
-            np.sqrt(0.46) * unit(tokens[0]),
-            np.sqrt(0.17) * unit(patches.mean(axis=(0, 1))),
-            np.sqrt(0.18 / 4) * np.asarray(regions).ravel(),
+            semantic,
             np.sqrt(0.12) * colors,
             np.sqrt(0.07) * texture,
         ]
@@ -247,7 +220,7 @@ def read_samples(work: Path, args: list[str], frame_size: int) -> Generator[tupl
 def summarize_samples(
     samples: Iterator[tuple[float, float, bytes]],
     shape: tuple[int, int],
-    model: cv2.dnn.Net,
+    model: VisualEncoder,
     boundaries: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int]:
     cuts = []
@@ -279,7 +252,7 @@ def summarize_samples(
 
 
 def profile(
-    clip: Clip, step: float, model: cv2.dnn.Net, ffmpeg: list[str], stage: Stage = nullcontext
+    clip: Clip, step: float, model: VisualEncoder, ffmpeg: list[str], stage: Stage = nullcontext
 ) -> Profile:
     boundaries = np.linspace(0, clip.video_duration, PHASES + 1)
     args, shape, motion_shape = sampling_command(clip, step, ffmpeg)
@@ -301,11 +274,16 @@ def profile(
 
 
 def analyze(
-    clips: list[Clip], step: float, ffmpeg: list[str], stage: Stage = nullcontext, *, offline: bool = False
+    clips: list[Clip],
+    step: float,
+    ffmpeg: list[str],
+    stage: Stage = nullcontext,
+    *,
+    offline: bool = False,
+    model_name: str = DEFAULT_MODEL,
 ) -> list[Profile]:
     with stage("加载视觉模型"):
-        cv2.setNumThreads(min(4, os.cpu_count() or 1))
-        model = cv2.dnn.readNetFromONNX(str(model_file(offline=offline)))
+        model = VisualEncoder.load(model_name, offline=offline)
     result = []
     for i, clip in enumerate(clips, 1):
         print(f"分析整段 [{i}/{len(clips)}] {clip.path.name}", flush=True)
