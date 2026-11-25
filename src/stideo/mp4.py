@@ -3,16 +3,21 @@
 import struct
 import sys
 from array import array
+from contextlib import ExitStack
 from dataclasses import dataclass
-from itertools import accumulate, groupby
-from pathlib import Path
+from itertools import accumulate, chain, groupby
+from typing import TYPE_CHECKING, BinaryIO
+lazy from pathlib import Path
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
 
 
-def box(kind, data):
+def box(kind: bytes, data: bytes) -> bytes:
     return struct.pack(">I4s", 8 + len(data), kind) + data
 
 
-def boxes(data):
+def boxes(data: bytes) -> Iterator[tuple[bytes, bytes]]:
     offset = 0
     while offset < len(data):
         size, kind = struct.unpack_from(">I4s", data, offset)
@@ -22,7 +27,7 @@ def boxes(data):
         offset += size
 
 
-def child(data, *names):
+def child(data: bytes, *names: bytes) -> bytes:
     for name in names:
         data = next((v for k, v in boxes(data) if k == name), None)
         if data is None:
@@ -30,18 +35,18 @@ def child(data, *names):
     return data
 
 
-def replace(data, changes):
+def replace(data: bytes, changes: dict[bytes, bytes | None]) -> bytes:
     remaining = changes.copy()
     parts = []
-    for kind, value in boxes(data):
-        value = remaining.pop(kind, value)
+    for kind, original in boxes(data):
+        value = remaining.pop(kind, original)
         if value is not None:
             parts.append(box(kind, value))
     parts.extend(box(k, v) for k, v in remaining.items() if v is not None)
     return b"".join(parts)
 
 
-def headers(path):
+def headers(path: Path) -> tuple[bytes, bytes]:
     result = {}
     with path.open("rb") as stream:
         while header := stream.read(8):
@@ -65,7 +70,7 @@ def headers(path):
     return result[b"ftyp"], result[b"moov"]
 
 
-def values(data, code="I"):
+def values(data: bytes, code: str = "I") -> array[int]:
     result = array(code)
     result.frombytes(data)
     if sys.byteorder == "little":
@@ -73,29 +78,29 @@ def values(data, code="I"):
     return result
 
 
-def packed(numbers, code="I"):
+def packed(numbers: Iterable[int], code: str = "I") -> bytes:
     result = array(code, numbers)
     if sys.byteorder == "little":
         result.byteswap()
     return result.tobytes()
 
 
-def table(rows, form):
+def table(rows: list[tuple[int, ...]], form: str) -> bytes:
     return bytes(4) + struct.pack(">I", len(rows)) + b"".join(struct.pack(form, *r) for r in rows)
 
 
-def timing_runs(durations):
+def timing_runs(durations: Iterable[int]) -> list[tuple[int, int]]:
     return [(sum(1 for _ in copies), value) for value, copies in groupby(durations)]
 
 
-def expand(data, signed=False):
+def expand(data: bytes, *, signed: bool = False) -> array[int]:
     result = array("q")
     for n, val in struct.iter_unpack(">Ii" if signed else ">II", data[8:]):
         result.extend(array("q", [val]) * n)
     return result
 
 
-def time_header(data, kind, duration, scale_or_id):
+def time_header(data: bytes, kind: bytes, duration: int, scale_or_id: int) -> bytes:
     # mvhd/mdhd 和 tkhd 的 v1 均用 64 位创建时间、修改时间和时长。
     old64 = data[0] == 1
     pos = 4 + (16 if old64 else 8)
@@ -124,7 +129,7 @@ class Chunk:
 
 
 class Track:
-    def __init__(self, path):
+    def __init__(self, path: Path) -> None:
         self.path = path
         self.ftyp, self.moov = headers(path)
         self.trak = child(self.moov, b"trak")
@@ -141,12 +146,32 @@ class Track:
             raise ValueError(f"{path.name} 的 MP4 样本数量无效")
         (self.entry,) = [box(k, v) for k, v in boxes(self.atoms[b"stsd"][8:])]
 
-    def chunks(self, start, description):
+    def presentation(self, span: int) -> tuple[Iterable[int], Iterable[int]]:
+        """Align the edit boundary and return local presentation offsets and key samples."""
+        ctts = self.atoms.get(b"ctts")
+        local = expand(ctts, signed=bool(ctts[0])) if ctts else array("q", [0]) * len(self.delta)
+        if len(local) != len(self.sizes):
+            raise ValueError("视频显示时间表不完整")
+        # stts 按解码顺序计时，ctts 存储每个样本的显示偏移。将片头显示时刻移到零。
+        first_pts = min(t + o for t, o in zip(accumulate(self.delta, initial=0), local, strict=False))
+        if local[0] != first_pts:
+            raise ValueError(f"{self.path.name} 开头不是独立可显示的画面")
+        last = span - (sum(self.delta) - self.delta[-1])
+        if last <= 0:
+            raise ValueError(f"{self.path.name} 的解码时间超出片段边界")
+        self.delta[-1] = last
+        keys = values(self.atoms[b"stss"][8:]) if b"stss" in self.atoms else range(1, len(self.sizes) + 1)
+        if not keys or keys[0] != 1:
+            raise ValueError(f"{self.path.name} 片头不是关键帧")
+        return (o - first_pts for o in local), keys
+
+    def chunks(self, start: float, description: int) -> Iterator[Chunk]:
         t = self.atoms
         positions = values(t[b"co64"][8:], "Q") if b"co64" in t else values(t[b"stco"][8:])
         mapping = list(struct.iter_unpack(">III", t[b"stsc"][8:]))
         sample = row = ticks = 0
-        for i, pos in enumerate(positions, 1):
+        for i, position in enumerate(positions, 1):
+            pos = position
             if row + 1 < len(mapping) and i == mapping[row + 1][0]:
                 row += 1
             _, num, index = mapping[row]
@@ -165,7 +190,7 @@ class Track:
             raise ValueError("MP4 分块与样本数量不一致")
 
 
-def chunk_tables(chunks):
+def chunk_tables(chunks: list[Chunk]) -> dict[bytes, bytes | None]:
     runs = []
     for i, c in enumerate(chunks, 1):
         if not runs or runs[-1][1:] != (c.count, c.description):
@@ -177,36 +202,36 @@ def chunk_tables(chunks):
     }
 
 
-def assemble(parts, audio_path, output, rotation):
-    """parts 中每项为单轨视频路径及目标时长（共同媒体时基的整数刻度）。"""
+def track_header(trak: bytes, duration: int, rotation: int) -> bytes:
+    tkhd = bytearray(time_header(child(trak, b"tkhd"), b"tkhd", duration, 1))
+    width, height = struct.unpack_from(">II", tkhd, len(tkhd) - 8)
+    one = 65536
+    matrix = {
+        0: (one, 0, 0, one, 0, 0),
+        90: (0, -one, one, 0, 0, width),
+        180: (-one, 0, 0, -one, width, height),
+        270: (0, one, -one, 0, height, 0),
+    }[rotation % 360]
+    a, b, c, d, x, y = matrix
+    struct.pack_into(">9i", tkhd, len(tkhd) - 44, a, b, 0, c, d, 0, x, y, 1 << 30)
+    return bytes(tkhd)
+
+
+def assemble(parts: list[tuple[Path, int]], audio_path: Path, output: Path, rotation: int) -> None:
+    """Parts 中每项为单轨视频路径及目标时长（共同媒体时基的整数刻度）。"""
     entries, video_chunks = [], []
     deltas, offsets, sizes, sync = array("q"), array("q"), array("I"), array("I")
     total = 0
-    for path, span in parts:
-        v = Track(path)
-        if not entries:
-            first = v
+    tracks = ((Track(path), span) for path, span in parts)
+    first, first_span = next(tracks)
+    for v, span in chain([(first, first_span)], tracks):
         if v.scale != first.scale:
             raise ValueError("视频轨道时基不一致")
         # 独立编码的片段可能有不同的 SPS/PPS 或 AV1 配置。每块引用自己的 stsd 条目。
         if v.entry not in entries:
             entries.append(v.entry)
-        ctts = v.atoms.get(b"ctts")
-        local = expand(ctts, bool(ctts[0])) if ctts else array("q", [0]) * len(v.delta)
-        if len(local) != len(v.sizes):
-            raise ValueError("视频显示时间表不完整")
-        # stts 按解码顺序计时，ctts 存储每个样本的显示偏移。将片头显示时刻移到零。
-        first_pts = min(t + o for t, o in zip(accumulate(v.delta, initial=0), local))
-        if local[0] != first_pts:
-            raise ValueError(f"{path.name} 开头不是独立可显示的画面")
-        offsets.extend(o - first_pts for o in local)
-        last = span - (sum(v.delta) - v.delta[-1])
-        if last <= 0:
-            raise ValueError(f"{path.name} 的解码时间超出片段边界")
-        v.delta[-1] = last
-        keys = values(v.atoms[b"stss"][8:]) if b"stss" in v.atoms else range(1, len(v.sizes) + 1)
-        if not keys or keys[0] != 1:
-            raise ValueError(f"{path.name} 片头不是关键帧")
+        local, keys = v.presentation(span)
+        offsets.extend(local)
         sync.extend(len(sizes) + k for k in keys)
         video_chunks.extend(v.chunks(total / v.scale, entries.index(v.entry) + 1))
         deltas.extend(v.delta)
@@ -230,21 +255,11 @@ def assemble(parts, audio_path, output, rotation):
     if len(sync) != len(sizes):
         video_tables[b"stss"] = bytes(4) + struct.pack(">I", len(sync)) + packed(sync)
     edit = box(b"elst", b"\x01\0\0\0" + struct.pack(">IQqI", 1, movie_duration, bias, 65536))
-    tkhd = bytearray(time_header(child(first.trak, b"tkhd"), b"tkhd", movie_duration, 1))
-    width, height = struct.unpack_from(">II", tkhd, len(tkhd) - 8)
-    one = 65536
-    matrix = {
-        0: (one, 0, 0, one, 0, 0),
-        90: (0, -one, one, 0, 0, width),
-        180: (-one, 0, 0, -one, width, height),
-        270: (0, one, -one, 0, height, 0),
-    }[rotation % 360]
-    a, b, c, d, x, y = matrix
-    struct.pack_into(">9i", tkhd, len(tkhd) - 44, a, b, 0, c, d, 0, x, y, 1 << 30)
+    tkhd = track_header(first.trak, movie_duration, rotation)
     mvhd = time_header(child(first.moov, b"mvhd"), b"mvhd", movie_duration, movie_scale)
     mvhd = mvhd[:-4] + struct.pack(">I", 3)
 
-    def movie():
+    def movie() -> bytes:
         vt = b"".join(
             box(k, v) for k, v in {**video_tables, **chunk_tables(video_chunks)}.items() if v is not None
         )
@@ -271,24 +286,24 @@ def assemble(parts, audio_path, output, rotation):
     for c in chunks:
         c.offset = pos
         pos += c.size
-    with output.open("xb") as dst, audio_path.open("rb") as sound:
+    with output.open("xb") as dst:
         dst.write(ftyp + movie() + struct.pack(">I4sQ", 1, b"mdat", pos - start + 16))
+        copy_chunks(dst, audio_path, chunks)
+
+
+def copy_chunks(dst: BinaryIO, audio_path: Path, chunks: list[Chunk]) -> None:
+    with audio_path.open("rb") as sound, ExitStack() as pictures:
         picture = None
-        try:
-            for c in chunks:
-                if c.path == audio_path:
-                    src = sound
-                else:
-                    if picture is None or picture.name != str(c.path):
-                        if picture is not None:
-                            picture.close()
-                        picture = open(c.path, "rb")
-                    src = picture
-                src.seek(c.source)
-                data = src.read(c.size)
-                if len(data) != c.size:
-                    raise ValueError(f"{c.path.name} 的压缩样本不完整")
-                dst.write(data)
-        finally:
-            if picture is not None:
-                picture.close()
+        for chunk in chunks:
+            if chunk.path == audio_path:
+                source = sound
+            else:
+                if picture is None or picture.name != str(chunk.path):
+                    pictures.close()
+                    picture = pictures.enter_context(chunk.path.open("rb"))
+                source = picture
+            source.seek(chunk.source)
+            data = source.read(chunk.size)
+            if len(data) != chunk.size:
+                raise ValueError(f"{chunk.path.name} 的压缩样本不完整")
+            dst.write(data)

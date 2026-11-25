@@ -1,10 +1,7 @@
 """按可复用的画面时长选择编码、画布与色彩规格，导出带连续 AAC 音轨的 MP4。"""
 
-from __future__ import annotations
-
 import json
 import math
-import os
 import re
 import subprocess
 import sys
@@ -17,9 +14,9 @@ from fractions import Fraction
 from pathlib import Path
 
 from stideo.commands import FFMPEG, run
-from stideo.media import Clip
-from stideo.timing import Stage
 from stideo.mp4 import Track, assemble
+lazy from stideo.media import Clip, Stream
+lazy from stideo.timing import Stage
 
 CODECS = ("h264", "hevc", "av1")
 TAGS = {"h264": "avc1", "hevc": "hvc1", "av1": "av01"}
@@ -35,10 +32,10 @@ class Color:
     depth: int
 
     @property
-    def hdr(self):
+    def hdr(self) -> bool:
         return self.transfer in ("arib-std-b67", "smpte2084")
 
-    def label(self):
+    def label(self) -> str:
         kind = "传递函数未标记" if self.transfer == "unknown" else "HDR" if self.hdr else "SDR"
         return f"{kind} {self.primaries}/{self.transfer} {self.depth}-bit"
 
@@ -46,8 +43,8 @@ class Color:
 SDR = Color("bt709", "bt709", "bt709", "tv", 8)
 
 
-def source_color(stream):
-    def tag(key, fallback):
+def source_color(stream: Stream) -> Color:
+    def tag(key: str, fallback: str) -> str:
         value = stream.get(key)
         return fallback if value in (None, "unknown", "unspecified", "reserved") else value
 
@@ -74,12 +71,12 @@ def source_color(stream):
 @dataclass(frozen=True)
 class Format:
     codec: str
-    size: tuple
+    size: tuple[int, int]
     rotation: int
     color: Color
 
 
-def rotation_of(stream):
+def rotation_of(stream: Stream) -> int | None:
     side = next((s for s in stream.get("side_data_list", []) if "rotation" in s), {})
     r = float(side.get("rotation", stream.get("tags", {}).get("rotate", 0)))
     if abs(r - 90 * round(r / 90)) > 0.01:
@@ -97,7 +94,7 @@ def rotation_of(stream):
     return int(round(r / 90) * 90) % 360
 
 
-def source_format(clip):
+def source_format(clip: Clip) -> Format | None:
     s = clip.stream
     angle = rotation_of(s)
     if angle is None or s.get("sample_aspect_ratio") not in (None, "N/A", "0:1", "1:1"):
@@ -106,7 +103,32 @@ def source_format(clip):
     return Format(s["codec_name"], (h, w) if angle % 180 else (w, h), angle, source_color(s))
 
 
-def packet_check(clip, fps):
+def packet_timestamps(raw: bytes) -> list[int]:
+    pts = []
+    last = None
+    for line in raw.splitlines():
+        if b"New Extradata" in line or b"Param Change" in line:
+            raise ValueError("段内解码配置发生变化")
+        if not line.startswith(b"pts="):
+            continue
+        fields = dict(x.split(b"=", 1) for x in line.split(b"|") if b"=" in x)
+        flags = fields.get(b"flags", b"")
+        if b"D" in flags or b"C" in flags:
+            raise ValueError("片头或片尾含隐藏参考帧或损坏包")
+        if last is None and b"K" not in flags:
+            raise ValueError("片头不是独立关键帧")
+        try:
+            p, d = int(fields[b"pts"]), int(fields[b"dts"])
+        except (KeyError, ValueError) as exc:
+            raise ValueError("时间戳不完整") from exc
+        if last is not None and d <= last:
+            raise ValueError("解码时间戳不连续")
+        pts.append(p)
+        last = d
+    return pts
+
+
+def packet_check(clip: Clip, fps: Fraction | None) -> str:
     s = clip.stream
     raw = run(
         [
@@ -124,27 +146,10 @@ def packet_check(clip, fps):
         ],
         f"无法检查 {clip.path.name} 的接缝",
     )
-    pts = []
-    last = None
-    for line in raw.splitlines():
-        if b"New Extradata" in line or b"Param Change" in line:
-            return "段内解码配置发生变化"
-        if not line.startswith(b"pts="):
-            continue
-        fields = dict(x.split(b"=", 1) for x in line.split(b"|") if b"=" in x)
-        flags = fields.get(b"flags", b"")
-        if b"D" in flags or b"C" in flags:
-            return "片头或片尾含隐藏参考帧或损坏包"
-        if last is None and b"K" not in flags:
-            return "片头不是独立关键帧"
-        try:
-            p, d = int(fields[b"pts"]), int(fields[b"dts"])
-        except (KeyError, ValueError):
-            return "时间戳不完整"
-        if last is not None and d <= last:
-            return "解码时间戳不连续"
-        pts.append(p)
-        last = d
+    try:
+        pts = packet_timestamps(raw)
+    except ValueError as exc:
+        return str(exc)
     if not pts or pts[0] != min(pts) or len(set(pts)) != len(pts):
         return "片头或显示时间戳不适合直接复制"
     if fps:
@@ -156,7 +161,7 @@ def packet_check(clip, fps):
     return ""
 
 
-def copy_reason(clip, fmt, size, fps):
+def copy_reason(clip: Clip, fmt: Format | None, size: tuple[int, int] | None, fps: Fraction | None) -> str:
     s = clip.stream
     if fmt is None or any(n % 2 for n in fmt.size):
         return "需归一化画幅、像素比例或显示变换"
@@ -174,15 +179,17 @@ def copy_reason(clip, fmt, size, fps):
 @dataclass
 class Plan:
     target: Format
-    reasons: dict
-    scores: dict
+    reasons: dict[Path, str]
+    scores: dict[str, float]
     fps: Fraction
     scale: int
-    encoders: set
+    encoders: set[str]
 
-    def describe(self, clips):
+    def describe(self, clips: list[Clip]) -> None:
         t = self.target
-        print("各编码可直接复制的最长素材时长　" + "　".join(f"{k} {v:.2f} 秒" for k, v in self.scores.items()))
+        print(
+            "各编码可直接复制的最长素材时长　" + "　".join(f"{k} {v:.2f} 秒" for k, v in self.scores.items())
+        )
         print(
             f"目标 {t.codec.upper()}，显示画布 {t.size[0]}×{t.size[1]}，{t.color.label()}，"
             f"转码帧率 {self.fps}。复制片段保留原始画面时间戳。"
@@ -192,9 +199,19 @@ class Plan:
             print(f"  {clip.path.name}　{'转码 · ' + reason if reason else '直接复制视频'}")
 
 
-def build_plan(clips, codec, size, requested_fps, fallback_size, fps):
+def build_plan(
+    clips: list[Clip],
+    codec: str,
+    size: tuple[int, int] | None,
+    requested_fps: Fraction | None,
+    *,
+    fallback_size: tuple[int, int],
+    fps: Fraction,
+) -> Plan:
     encoders = set(
-        re.findall(r"^ V\S{5}\s+(\S+)", run(FFMPEG[:3] + ["-encoders"], "无法读取编码器").decode(), re.M)
+        re.findall(
+            r"^ V\S{5}\s+(\S+)", run([*FFMPEG[:3], "-encoders"], "无法读取编码器").decode(), re.MULTILINE
+        )
     )
     allowed = CODECS if codec == "auto" else (codec,)
     reasons, forms = {}, {}
@@ -213,7 +230,8 @@ def build_plan(clips, codec, size, requested_fps, fallback_size, fps):
     viable = {
         f: seconds
         for f, seconds in totals.items()
-        if encoder_choices(f.codec, encoders) or all(forms[c.path] == f and not reasons[c.path] for c in clips)
+        if encoder_choices(f.codec, encoders)
+        or all(forms[c.path] == f and not reasons[c.path] for c in clips)
     }
     scores = {k: max((v for f, v in viable.items() if f.codec == k), default=0.0) for k in allowed}
     if viable:
@@ -251,18 +269,20 @@ def build_plan(clips, codec, size, requested_fps, fallback_size, fps):
     return Plan(target, reasons, scores, fps, scale, encoders)
 
 
-def encoder_choices(codec, available):
+def encoder_choices(codec: str, available: set[str]) -> list[str]:
     names = {
         "h264": ["libx264", "h264_videotoolbox"],
         "hevc": ["hevc_videotoolbox", "libx265"],
         "av1": ["libsvtav1", "libaom-av1", "librav1e"],
     }[codec]
     return [
-        name for name in names if name in available and ("videotoolbox" not in name or sys.platform == "darwin")
+        name
+        for name in names
+        if name in available and ("videotoolbox" not in name or sys.platform == "darwin")
     ]
 
 
-def encoder_args(name, color, fps):
+def encoder_args(name: str, fps: Fraction) -> list[str]:
     if "videotoolbox" in name:
         quality = ["-allow_sw", "0", "-q:v", "65", "-bf", "0"]
     elif name == "libx264":
@@ -278,7 +298,7 @@ def encoder_args(name, color, fps):
     return ["-c:v", name, *quality, "-g", str(max(1, round(2 * fps)))]
 
 
-def color_args(color):
+def color_args(color: Color) -> list[str]:
     return [
         "-color_primaries",
         color.primaries,
@@ -291,7 +311,7 @@ def color_args(color):
     ]
 
 
-def video_filter(clip, plan, frames):
+def video_filter(clip: Clip, plan: Plan, frames: int) -> str:
     t = plan.target
     w, h = t.size
     inc, out = source_color(clip.stream), t.color
@@ -327,17 +347,20 @@ def video_filter(clip, plan, frames):
         {0: [], 90: ["transpose=clock"], 180: ["hflip", "vflip"], 270: ["transpose=cclock"]}[t.rotation]
     )
     filters += [
-        f"setparams=color_primaries={out.primaries}:color_trc={out.transfer}:"
-        f"colorspace={out.matrix}:range={'full' if out.range == 'pc' else 'limited'}",
+        (
+            f"setparams=color_primaries={out.primaries}:color_trc={out.transfer}:"
+            f"colorspace={out.matrix}:range={'full' if out.range == 'pc' else 'limited'}"
+        ),
         "tpad=stop_mode=clone:stop=-1",
         f"trim=end_frame={frames}",
     ]
     return ",".join(filters)
 
 
-def prepare(clip, path, plan, encode):
+def prepare(clip: Clip, path: Path, plan: Plan, *, encode: bool) -> int:
     t = plan.target
-    args = FFMPEG + [
+    args = [
+        *FFMPEG,
         "-i",
         str(clip.path),
         "-map",
@@ -350,9 +373,16 @@ def prepare(clip, path, plan, encode):
         "-map_chapters",
         "-1",
     ]
-    tail = ["-tag:v", TAGS[t.codec], "-video_track_timescale", str(plan.scale), *color_args(t.color), str(path)]
+    tail = [
+        "-tag:v",
+        TAGS[t.codec],
+        "-video_track_timescale",
+        str(plan.scale),
+        *color_args(t.color),
+        str(path),
+    ]
     if not encode:
-        run(args + ["-c:v", "copy"] + tail, f"不能复制 {clip.path.name}")
+        run([*args, "-c:v", "copy", *tail], f"不能复制 {clip.path.name}")
         return round(clip.video_duration * plan.scale)
     for side in clip.stream.get("side_data_list", []):
         if "DOVI" in side.get("side_data_type", "") and not side.get("dv_bl_signal_compatibility_id", 0):
@@ -363,7 +393,7 @@ def prepare(clip, path, plan, encode):
     for name in encoder_choices(t.codec, plan.encoders):
         try:
             run(
-                args + ["-vf", vf, "-fps_mode", "passthrough", *encoder_args(name, t.color, plan.fps)] + tail,
+                [*args, "-vf", vf, "-fps_mode", "passthrough", *encoder_args(name, plan.fps), *tail],
                 f"{clip.path.name} 使用 {name} 转码失败",
             )
             print(f"  视频编码器 {name}", flush=True)
@@ -374,11 +404,11 @@ def prepare(clip, path, plan, encode):
     raise ValueError("\n".join(errors) or f"找不到 {t.codec} 编码器")
 
 
-def make_audio(clips, parts, scale, work):
+def make_audio(clips: list[Clip], parts: list[tuple[Path, int]], scale: int, work: Path) -> Path:
     pcm, audio = work / "sound.pcm", work / "sound.m4a"
     ticks = previous = 0
     with pcm.open("wb") as dst:
-        for i, (clip, (_, span)) in enumerate(zip(clips, parts)):
+        for i, (clip, (_, span)) in enumerate(zip(clips, parts, strict=True)):
             ticks += span
             end = (ticks * RATE + scale // 2) // scale
             n = end - previous
@@ -400,8 +430,8 @@ def make_audio(clips, parts, scale, work):
             if i + 1 < len(clips) and ramp:
                 af.append(f"afade=t=out:ss={n - ramp}:ns={ramp}")
             res = subprocess.run(
-                FFMPEG
-                + [
+                [
+                    *FFMPEG,
                     "-i",
                     str(clip.path),
                     "-map",
@@ -416,14 +446,15 @@ def make_audio(clips, parts, scale, work):
                     str(RATE),
                     "pipe:1",
                 ],
+                check=False,
                 stdout=dst,
                 stderr=subprocess.PIPE,
             )
             if res.returncode or dst.tell() != end * 4:
                 raise ValueError(f"{clip.path.name} 的音频处理失败\n{res.stderr.decode(errors='replace')}")
     run(
-        FFMPEG
-        + [
+        [
+            *FFMPEG,
             "-f",
             "s16le",
             "-ar",
@@ -446,8 +477,9 @@ def make_audio(clips, parts, scale, work):
     return audio
 
 
-def thumbnails(path, start, duration):
-    args = FFMPEG + [
+def thumbnails(path: Path, start: float, duration: float) -> list[bytes]:
+    args = [
+        *FFMPEG,
         "-threads",
         "1",
         "-noautorotate",
@@ -471,23 +503,26 @@ def thumbnails(path, start, duration):
         "rawvideo",
         "pipe:1",
     ]
-    p = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.run(args, capture_output=True, check=False)
     if p.returncode or p.stderr.strip():
         raise ValueError(p.stderr.decode(errors="replace") or "接缝解码失败")
     n = 24 * 24 * 3
     return [p.stdout[i : i + n] for i in range(0, len(p.stdout), n)]
 
 
-def match_frames(reference, actual, offset=0):
+def match_frames(reference: list[bytes], actual: list[bytes], offset: int = 0) -> None:
     if not reference or not actual:
         raise ValueError("接缝缺少画面")
     for j in {0, len(reference) // 2}:
         near = actual[max(0, offset + j - 2) : offset + j + 3]
-        if not near or min(sum(abs(a - b) for a, b in zip(reference[j], x)) / len(x) for x in near) > 3:
+        if (
+            not near
+            or min(sum(abs(a - b) for a, b in zip(reference[j], x, strict=True)) / len(x) for x in near) > 3
+        ):
             raise ValueError("接缝显示画面与分段不一致")
 
 
-def inspect_joins(output, parts, scale):
+def inspect_joins(output: Path, parts: list[tuple[Path, int]], scale: int) -> set[int]:
     bad = set()
     ticks = 0
     tail = []
@@ -517,7 +552,7 @@ def inspect_joins(output, parts, scale):
     return bad
 
 
-def check_streams(output, plan, duration):
+def check_streams(output: Path, plan: Plan, duration: float) -> None:
     data = json.loads(
         run(["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(output)], "无法检查成片轨道")
     )
@@ -540,13 +575,32 @@ def check_streams(output, plan, duration):
         raise ValueError("成片音视频轨道或时长不一致")
 
 
-def render(clips, output, plan, stage=nullcontext):
+def publish(staged: Path, output: Path) -> None:
+    with output.open("xb"):
+        pass
+    try:
+        staged.replace(output)
+    except BaseException:
+        output.unlink()
+        raise
+
+
+def retry_indices(bad: set[int], copied: set[int], attempt: int) -> set[int]:
+    retry = copied & (bad | {i - 1 for i in bad} | {i + 1 for i in bad})
+    if attempt or not retry:
+        retry = set(copied)
+    if not retry or attempt == 2:
+        raise ValueError("成片接缝验证未通过")
+    return retry
+
+
+def render(clips: list[Clip], output: Path, plan: Plan, stage: Stage = nullcontext) -> set[Path]:
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".stitch-", dir=output.parent) as tmp:
         work = Path(tmp)
         parts, copied = [], set()
 
-        def write_part(i, copy):
+        def write_part(i: int, *, copy: bool) -> tuple[Path, int]:
             c = clips[i]
             dest = work / f"{i:06}.mp4"
             dest.unlink(missing_ok=True)
@@ -554,7 +608,7 @@ def render(clips, output, plan, stage=nullcontext):
             print(f"{action} [{i + 1}/{len(clips)}] {c.path.name}", flush=True)
             now = time.monotonic()
             with stage(action):
-                span = prepare(c, dest, plan, not copy)
+                span = prepare(c, dest, plan, encode=not copy)
                 track = Track(dest)
                 if span <= sum(track.delta[:-1]):
                     raise ValueError(f"{c.path.name} 需要重新对齐片尾时间")
@@ -564,12 +618,12 @@ def render(clips, output, plan, stage=nullcontext):
         for i, c in enumerate(clips):
             if not plan.reasons[c.path]:
                 try:
-                    parts.append(write_part(i, True))
+                    parts.append(write_part(i, copy=True))
                     copied.add(i)
                     continue
                 except ValueError as exc:
                     print(f"  改用转码　{exc}", flush=True)
-            parts.append(write_part(i, False))
+            parts.append(write_part(i, copy=False))
         staged = work / "joined.mp4"
         audio_spans = None
         for attempt in range(3):
@@ -587,23 +641,13 @@ def render(clips, output, plan, stage=nullcontext):
                 bad = inspect_joins(staged, parts, plan.scale)
             if not bad:
                 break
-            retry = copied & (bad | {i - 1 for i in bad} | {i + 1 for i in bad})
-            if attempt or not retry:
-                retry = set(copied)
-            if not retry or attempt == 2:
-                raise ValueError("成片接缝验证未通过")
-            for i in sorted(retry):
-                parts[i] = write_part(i, False)
+            for i in sorted(retry_indices(bad, copied, attempt)):
+                parts[i] = write_part(i, copy=False)
                 copied.remove(i)
-        with output.open("xb"):
-            pass
-        try:
-            os.replace(staged, output)
-        except BaseException:
-            output.unlink()
-            raise
+        publish(staged, output)
         seconds = sum(clips[i].video_duration for i in copied)
         print(
-            f"最终直接复制 {len(copied)}/{len(clips)} 段（{seconds:.3f} 秒），其余 {len(clips) - len(copied)} 段转码。"
+            f"最终直接复制 {len(copied)}/{len(clips)} 段（{seconds:.3f} 秒），"
+            f"其余 {len(clips) - len(copied)} 段转码。"
         )
         return {clips[i].path for i in copied}
