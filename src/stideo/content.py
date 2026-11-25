@@ -4,49 +4,24 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass
-import hashlib
 from itertools import permutations
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 import time
-from urllib.request import urlopen
+from stideo.models import model_file
 
 import cv2
 import numpy as np
 
 
-MODEL_URL = ("https://huggingface.co/Xenova/dinov2-small/resolve/"
-             "c2bb04a51fab207c420665f1946016107bffc701/onnx/model_quantized.onnx")
-MODEL_SHA256 = "3afdc8bc63b50558d6e5770f5b799bb82455c2311183a2de43803f343a29d917"
 MODEL_MEAN = np.array([.485, .456, .406], dtype=np.float32)
 MODEL_STD = np.array([.229, .224, .225], dtype=np.float32)
 PHASES = 4
 PHASE_MATCHES = np.array(list(permutations(range(PHASES))))
 MOTION_FPS = 8
 CUT_THRESHOLD = .28
-
-
-def model_file():
-    cache = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "stitch-videos" / "models"
-    cache.mkdir(parents=True, exist_ok=True)
-    target = cache / "dinov2-small-int8.onnx"
-    if target.is_file() and hashlib.sha256(target.read_bytes()).hexdigest() == MODEL_SHA256:
-        return str(target)
-    print("正在下载本地 DINOv2 视觉模型（约 24 MB）…", flush=True)
-    with tempfile.NamedTemporaryFile(dir=cache, delete=False) as tmp:
-        download = Path(tmp.name)
-    try:
-        with urlopen(MODEL_URL, timeout=45) as src, download.open("wb") as dst:
-            shutil.copyfileobj(src, dst)
-        if hashlib.sha256(download.read_bytes()).hexdigest() != MODEL_SHA256:
-            raise ValueError("DINOv2 模型校验失败，请重新运行")
-        os.replace(download, target)
-    finally:
-        download.unlink(missing_ok=True)
-    return str(target)
 
 
 def unit(values):
@@ -256,10 +231,10 @@ def profile(clip, step, model, ffmpeg, stage=nullcontext):
     return Profile(unit(visual_sum), layout_sum / np.diff(boundaries)[:, None], motion, audio, samples)
 
 
-def analyze(clips, step, ffmpeg, stage=nullcontext):
+def analyze(clips, step, ffmpeg, stage=nullcontext, *, offline=False):
     with stage("加载视觉模型"):
         cv2.setNumThreads(min(4, os.cpu_count() or 1))
-        model = cv2.dnn.readNetFromONNX(model_file())
+        model = cv2.dnn.readNetFromONNX(str(model_file(offline=offline)))
     result = []
     for i, clip in enumerate(clips, 1):
         print(f"分析整段 [{i}/{len(clips)}] {clip.path.name}", flush=True)

@@ -31,6 +31,7 @@ import sys
 import tempfile
 import time
 
+from stideo.models import model_file
 from stideo.export import CODECS, FFMPEG, build_plan, render, run
 
 
@@ -405,9 +406,9 @@ def smooth_order(clips, stage=nullcontext):
     return [clips[i] for i in path]
 
 
-def content_order(clips, step, stage=nullcontext):
+def content_order(clips, step, stage=nullcontext, *, offline=False):
     from stideo import content as analysis
-    profiles = analysis.analyze(clips, step, FFMPEG, stage)
+    profiles = analysis.analyze(clips, step, FFMPEG, stage, offline=offline)
     if len(clips) == 1:
         return clips, {}
     with stage("片段首尾分析"):
@@ -460,7 +461,12 @@ def main():
     parser.add_argument("--size", type=parse_size, metavar="宽x高", help="手动指定画布，如 1920x1080")
     parser.add_argument("--fps", type=parse_fps, metavar="帧率",
                         help="指定固定输出帧率。默认保留复制片段的时间戳，转码片段按素材选择，最高 60")
+    parser.add_argument("--fetch-model", action="store_true", help="下载或校验视觉模型，输出路径并退出")
+    parser.add_argument("--offline", action="store_true", help="仅使用已校验的本地模型")
     args = parser.parse_args()
+    if args.fetch_model:
+        print(model_file(offline=args.offline))
+        return
     if not math.isfinite(args.content_step) or args.content_step < 0:
         parser.error("--content-step 应为非负的有限秒数")
     folder = args.folder.expanduser().resolve()
@@ -498,7 +504,7 @@ def main():
     if args.order == "smooth" and len(clips) > 1:
         clips = smooth_order(clips, timings.stage)
     elif args.order == "content":
-        clips, notes = content_order(clips, args.content_step, timings.stage)
+        clips, notes = content_order(clips, args.content_step, timings.stage, offline=args.offline)
     print(f"排序完成，自启动起 {timings.elapsed():.3f} 秒。", flush=True)
     print(f"共 {len(clips)} 段。播放顺序")
     for i, clip in enumerate(clips, 1):
