@@ -11,6 +11,7 @@ from collections import defaultdict
 from contextlib import nullcontext
 from dataclasses import dataclass
 from fractions import Fraction
+from functools import cache
 from pathlib import Path
 
 from stideo.commands import FFMPEG, run
@@ -311,10 +312,40 @@ def color_args(color: Color) -> list[str]:
     ]
 
 
+@cache
+def scale_handles_transfer() -> bool:
+    options = run([*FFMPEG, "-h", "filter=scale"], "无法读取 scale 滤镜的选项")
+    return b"out_transfer" in options and b"intent" in options
+
+
+def zscale_conversion(source: Color, target: Color, pixel_format: str) -> list[str]:
+    """Linearize before tone mapping on FFmpeg versions with the older scale filter."""
+    source_range = "full" if source.range == "pc" else "limited"
+    target_range = "full" if target.range == "pc" else "limited"
+    filters = [
+        (
+            f"zscale=pin={source.primaries}:tin={source.transfer}:min={source.matrix}:rin={source_range}:"
+            f"p={target.primaries}:t=linear:npl=100"
+        ),
+        "format=gbrpf32le",
+    ]
+    if source.hdr and not target.hdr:
+        filters.append("tonemap=tonemap=mobius:desat=0")
+    filters.extend(
+        [
+            f"zscale=p={target.primaries}:t={target.transfer}:m={target.matrix}:r={target_range}:npl=100",
+            f"format={pixel_format}",
+        ]
+    )
+    return filters
+
+
 def video_filter(clip: Clip, plan: Plan, frames: int) -> str:
     t = plan.target
     w, h = t.size
     inc, out = source_color(clip.stream), t.color
+    fmt = "yuv420p10le" if out.depth > 8 else "yuv420p"
+    conversion = []
     opts = f"out_color_matrix={out.matrix}:out_range={out.range}"
     different = (inc.primaries, inc.transfer) != (out.primaries, out.transfer)
     if different:
@@ -322,15 +353,18 @@ def video_filter(clip: Clip, plan: Plan, frames: int) -> str:
             raise ValueError(
                 f"{clip.path.name} 的宽色域素材缺少传递函数，需先明确 PQ、HLG 或 SDR 才能进行色彩转换"
             )
-        opts += (
-            f":in_primaries={inc.primaries}:in_transfer={inc.transfer}:in_color_matrix={inc.matrix}"
-            f":in_range={inc.range}:out_primaries={out.primaries}:out_transfer={out.transfer}:intent=perceptual"
-        )
+        if scale_handles_transfer():
+            opts += (
+                f":in_primaries={inc.primaries}:in_transfer={inc.transfer}:in_color_matrix={inc.matrix}"
+                f":in_range={inc.range}:out_primaries={out.primaries}:out_transfer={out.transfer}:intent=perceptual"
+            )
+        else:
+            conversion = zscale_conversion(inc, out, fmt)
     fit = f"scale=w='clip(round({h}*dar/2)*2,2,{w})':h='clip(round({w}/dar/2)*2,2,{h})':flags=lanczos:{opts}"
-    fmt = "yuv420p10le" if out.depth > 8 else "yuv420p"
     filters = [
         f"setpts=PTS-STARTPTS+({clip.video_offset:.9f})/TB",
         f"fps={plan.fps}:start_time=0:eof_action=pass",
+        *conversion,
         fit,
         "setsar=1",
         f"format={fmt}",
@@ -482,6 +516,14 @@ def thumbnails(path: Path, start: float, duration: float) -> list[bytes]:
         *FFMPEG,
         "-threads",
         "1",
+        # MP4 sample tables carry packet boundaries and timestamps. FFmpeg 6
+        # otherwise probes later H.264 packets using the first sample description.
+        "-nofind_stream_info",
+        "-fflags",
+        "+noparse+nofillin",
+        "-err_detect",
+        "explode",
+        "-xerror",
         "-noautorotate",
         "-ss",
         f"{start:.9f}",
