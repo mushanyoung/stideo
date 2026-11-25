@@ -33,7 +33,9 @@ def model_file(*, offline: bool = False) -> Path:
     if verified(target):
         return target
     if offline or os.environ.get("STIDEO_OFFLINE") == "1":
-        raise ValueError(f"离线模式下模型缺失或校验失败。请先运行 stideo --fetch-model，或将已校验的模型放在 {target}")
+        raise ValueError(
+            f"离线模式下模型缺失或校验失败。请先运行 stideo --fetch-model，或将已校验的模型放在 {target}"
+        )
     directory.mkdir(parents=True, exist_ok=True)
     with FileLock(str(target) + ".lock", timeout=300):
         if verified(target):

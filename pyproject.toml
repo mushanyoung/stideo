@@ -22,3 +22,29 @@ build-backend = "uv_build"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--strict-markers --strict-config"
+
+[tool.ruff]
+target-version = "py315"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["ALL"]
+# Chinese punctuation is intentional in messages and documentation.
+allowed-confusables = ["，", "（", "）", "：", "×", "–"]
+ignore = [
+    "COM812", "D203", "D213",  # Conflicts with the formatter or the selected docstring convention.
+    "D101", "D102", "D103", "D107", "D400", "D415",  # Internal helpers and Chinese prose.
+    "CPY001",  # File-level copyright banners are optional.
+    "EM101", "EM102", "TRY003",  # Keep actionable CLI errors at the failure site.
+    "PLR2004",  # Media formats, feature extraction, and test oracles use numeric constants.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# User-facing progress is part of the command line interface.
+"src/stideo/{cli,content,export,models,ordering,timing}.py" = ["T201"]
+# These modules launch known FFmpeg/ffprobe programs via argument vectors on PATH.
+"src/stideo/{commands,content,export}.py" = ["S603", "S607"]
+"tests/**.py" = ["S101", "S603", "S607"]
+
+[tool.ruff.lint.pylint]
+max-args = 7  # Media layout and reporting APIs have independent named options.
