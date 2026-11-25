@@ -51,8 +51,9 @@ def test_similarity_covers_audio_and_movement(
     corpus: Path, tmp_path: Path, dataset: str, prefix: str
 ) -> None:
     names = ids(stitch(corpus / dataset, tmp_path / "order.mp4", dry=True))
+    stems = [Path(name).stem for name in names]
     for first, second in ((1, 20), (2, 10)):
-        assert abs(names.index(f"{prefix}{first}.mp4") - names.index(f"{prefix}{second}.mp4")) == 1
+        assert abs(stems.index(f"{prefix}{first}") - stems.index(f"{prefix}{second}")) == 1
 
 
 @pytest.mark.parametrize(("step", "minimum", "maximum"), [("60", 4, 6), ("0", 36, 36)])

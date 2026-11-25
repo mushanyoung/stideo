@@ -13,6 +13,7 @@ FPS = 12
 SDR = ("bt709", "bt709", "bt709")
 PQ = ("bt2020", "smpte2084", "bt2020nc")
 ENCODERS = {
+    "ffv1": ["-c:v", "ffv1"],
     "h264": ["-c:v", "libx264", "-preset", "fast", "-crf", "15"],
     "hevc": [
         "-c:v",
@@ -212,7 +213,7 @@ def ranges(folder: Path) -> None:
         ("sdr-h264", "train", 18, "h264", SDR),
     ):
         frames = film(subject, length)
-        for i, code in enumerate((48, 120, 200, 235)):
+        for i, code in enumerate((48, 96, 140, 180)):
             frames[:, :16, i * 40 : (i + 1) * 40] = code
         encode(folder / f"{name}.mp4", frames, codec=codec, color=color)
 
@@ -279,12 +280,13 @@ def motion(folder: Path) -> None:
     # Both directions visit precisely the same cyclic texture positions over time.
     texture = np.random.default_rng(724).integers(0, 256, (12, 10, 3), np.uint8)
     tile = cv2.resize(texture, (24, HEIGHT), interpolation=cv2.INTER_LINEAR)
-    image = np.tile(tile, (1, 6, 1))
+    # Moderate contrast keeps continuous panning below the scene-cut threshold.
+    image = 96 + np.tile(tile, (1, 6, 1)) // 4
     for number, direction in ((1, 1), (2, -1), (10, -1), (20, 1)):
         frames = np.stack([np.roll(image, direction * tick * 2, axis=1) for tick in range(48)])
         still = np.repeat(image[None], FPS, axis=0)
         frames = np.concatenate((still, frames, still))
-        encode(folder / f"pan{number}.mp4", frames, options=("-bf", "0"))
+        encode(folder / f"pan{number}.mkv", frames, codec="ffv1")
 
 
 def cuts(folder: Path) -> None:
