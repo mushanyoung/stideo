@@ -1,0 +1,9 @@
+#!/bin/sh
+# Check precisely the tree the commit will publish, including partially staged files.
+set -eu
+snapshot=$(mktemp -d)
+trap 'rm -rf "$snapshot"' EXIT
+git checkout-index --all --prefix="$snapshot/"
+cd "$snapshot"
+uv run --locked --only-group dev ruff check .
+uv run --locked --only-group dev ruff format --check .

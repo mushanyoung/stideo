@@ -48,6 +48,10 @@ uv run stideo clips --offline --dry-run
 
 模型权重来自固定修订版，以 SHA-256 校验。默认缓存为 `${XDG_CACHE_HOME:-~/.cache}/stitch-videos/models/dinov2-small-int8.onnx`。从原脚本迁移、重新克隆或新建虚拟环境都能复用同一文件。可以用 `STIDEO_MODEL_DIR` 指定模型目录，或把已经校验的同名文件拷贝到离线机器。并发首次运行只下载一次，损坏的缓存会在联网时重新获取。设置 `STIDEO_OFFLINE=1` 可以对所有运行启用离线模型检查。[固定模型版本](https://huggingface.co/Xenova/dinov2-small/tree/c2bb04a51fab207c420665f1946016107bffc701)
 
+## 开发时启用 Ruff
+
+运行一次 `git config --local core.hooksPath .githooks`。每次提交都会检查暂存快照，包括部分暂存的文件。Ruff 启用全部稳定规则，语言标点、命令行输出等例外列在 `pyproject.toml` 中。GitHub Actions 对推送和 PR 运行同样的 lint 与格式检查。
+
 ## 合成数据与回归测试
 
 ```sh
