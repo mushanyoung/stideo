@@ -16,7 +16,9 @@
 | SigLIP 2 B/32 INT8 | 55.8% | 48.3% | 60.0% | 21.4 | 0.98 | 335 |
 | MobileViT XXS | 66.6% | 69.2% | 66.1% | **7.7** | **0.52** | **120** |
 
-速度优先时可用 `--model mobilevit-xxs`。它在共享前景的场景组达到 100% mAP，在花卉组只有 48.1%，默认模型在花卉组为 80.9%。混入其他主体镜头的 `cutaways` 对所有模型都很难，这一组最高 mAP 为 36.2%。Linux x86-64 的完整报告可从对应工作流的 `visual-model-comparison` 附件下载。[跨平台评测记录](https://github.com/mushanyoung/stideo/actions/workflows/vision.yml)
+速度优先时可用 `--model mobilevit-xxs`。它在 M4 的共享前景场景组达到 100% mAP，在花卉组只有 48.1%，默认模型在花卉组为 80.9%。混入其他主体镜头的 `cutaways` 对所有模型都很难，这一组最高 mAP 为 36.2%。按该组的标签数量计算，随机排列检索结果的期望 mAP 为 34.7%。
+
+Ubuntu x86-64 上也没有候选达到默认切换门槛。在四线程 Intel Xeon 6975P-C 上，默认模型的留出集 mAP 为 74.3%，同类接缝达成率为 77.2%，单帧用时 43.9 毫秒。MobileViT XXS 的三项结果为 66.5%、68.1% 和 9.2 毫秒。三段素材的完整排序分别用了 1.50 秒和 0.70 秒。[Linux 完整报告](benchmarks/linux-x86_64.json) · [后续评测记录](https://github.com/mushanyoung/stideo/actions/workflows/vision.yml)
 
 ## 重现实验
 
