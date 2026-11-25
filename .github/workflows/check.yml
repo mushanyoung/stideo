@@ -43,7 +43,11 @@ jobs:
         with:
           path: ~/.cache/stitch-videos/models
           key: dinov2-${{ hashFiles('src/stideo/models.py') }}
-      - run: uv run --locked stideo --fetch-model
+      - name: Prepare the default and both offline test models
+        run: |
+          uv run --locked stideo --fetch-model
+          uv run --locked stideo --fetch-model --model dinov2-small-int8
+          uv run --locked stideo --fetch-model --model mobilevit-xxs
       - run: uv run --locked pytest -q
         env:
           STIDEO_OFFLINE: "1"

@@ -1,0 +1,64 @@
+name: Visual model comparison
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/stideo/content.py"
+      - "src/stideo/ordering.py"
+      - "src/stideo/models.py"
+      - "src/stideo/vision.py"
+      - "tests/model_*.py"
+      - "tests/datasets.py"
+      - "uv.lock"
+      - ".github/workflows/vision.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Quality and CPU performance
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: "0.13.10"
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
+      - run: uv sync --locked
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/stitch-videos/models
+            ~/.cache/stideo-bench
+          key: model-evaluation-${{ hashFiles('src/stideo/models.py', 'tests/model_datasets.py') }}
+      - name: Build development and holdout clips
+        run: uv run --locked python -m tests.model_datasets "$RUNNER_TEMP/clips" --sets viewpoints locations cutaways flowers
+      - name: Measure the base revision on the same clips and CPU
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
+          cd "$RUNNER_TEMP/base"
+          if [[ -f tests/model_benchmark.py ]]; then
+            uv run --locked python -m tests.model_benchmark "$RUNNER_TEMP/clips" --output "$RUNNER_TEMP/base-models.json"
+          fi
+      - name: Measure candidate models and check regressions
+        shell: bash
+        run: |
+          reference=()
+          if [[ -f "$RUNNER_TEMP/base-models.json" ]]; then
+            reference=(--reference "$RUNNER_TEMP/base-models.json")
+          fi
+          uv run --locked python -m tests.model_benchmark "$RUNNER_TEMP/clips" --output "$RUNNER_TEMP/candidate-models.json" "${reference[@]}"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-model-comparison
+          path: |
+            ${{ runner.temp }}/candidate-models.json
+            ${{ runner.temp }}/base-models.json
+          if-no-files-found: ignore
