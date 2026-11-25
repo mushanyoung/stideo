@@ -16,19 +16,14 @@ from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
 
+from stideo.commands import FFMPEG, run
+from stideo.media import Clip
+from stideo.timing import Stage
 from stideo.mp4 import Track, assemble
 
-FFMPEG = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error"]
 CODECS = ("h264", "hevc", "av1")
 TAGS = {"h264": "avc1", "hevc": "hvc1", "av1": "av01"}
 RATE = 48000
-
-
-def run(command, label):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode:
-        raise ValueError(f"{label}\n{result.stderr.decode(errors='replace').strip() or '外部命令执行失败'}")
-    return result.stdout
 
 
 @dataclass(frozen=True)
@@ -611,3 +606,4 @@ def render(clips, output, plan, stage=nullcontext):
         print(
             f"最终直接复制 {len(copied)}/{len(clips)} 段（{seconds:.3f} 秒），其余 {len(clips) - len(copied)} 段转码。"
         )
+        return {clips[i].path for i in copied}
