@@ -2,6 +2,7 @@
 name = "stideo"
 version = "0.1.0"
 description = "Stitch video clips by whole-clip similarity, boundary continuity or natural filename order."
+readme = "README.md"
 requires-python = ">=3.15,<3.16"
 dependencies = [
     "filelock>=3.18,<5",

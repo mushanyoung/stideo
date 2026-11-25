@@ -1,0 +1,82 @@
+# Stideo
+
+Stideo 取自 *stitch video*。它把一个目录里的视频排成一部 MP4。默认比较整段画面的内容、运动和声音，把相近的片段放在一起。导出时优先复用原始视频压缩数据，保留可复制部分的画质和帧时间戳。
+
+## 从克隆到第一部成片
+
+需要 Git、uv，以及在 PATH 中可用的 FFmpeg 和 ffprobe。macOS 可以运行 `brew install uv ffmpeg`。Ubuntu 24.04 可以用 `sudo apt install ffmpeg` 安装媒体工具。uv 会获取 Python 3.15 并按仓库锁文件准备依赖。持续集成覆盖 Ubuntu 24.04 和 macOS 15。[uv 安装说明](https://docs.astral.sh/uv/getting-started/installation/)
+
+```sh
+git clone https://github.com/mushanyoung/stideo.git
+cd stideo
+uv sync --locked --no-dev
+uv run --locked --no-dev stideo "/path/to/clips" --dry-run
+uv run --locked --no-dev stideo "/path/to/clips" -o "/path/to/movie.mp4"
+```
+
+第一次使用 `content` 会下载约 24 MB 的模型。预览会执行相同的排序和导出规划，并列出每段复制或转码的原因。省略 `-o` 时，成片写入素材目录的 `合辑/` 子目录。输出须使用新的文件名。环境准备好后，在其他目录也可以直接调用本仓库的 `.venv/bin/stideo`。
+
+## 怎样决定播放顺序
+
+| 选项 | 适合的素材 | 排序依据 |
+| --- | --- | --- |
+| `--order content`（默认） | 同一批素材的拍摄顺序未知 | 整段取样，比较 DINOv2 的全画面与局部特征，以及色彩、构图、纹理、光流、声音和接缝 |
+| `--order smooth` | 希望上一段结尾自然接到下一段开头 | 比较相邻两段首尾各 0.75 秒的画面、运动和声音 |
+| `--order natural` | 文件名已表达剪辑顺序 | 数字按数值比较，例如 `clip2` 在 `clip10` 前 |
+
+`content` 默认约每秒取一个画面，遇到切镜会额外取样。用 `--content-step 0.5` 可以加密取样，`--content-step 0` 会覆盖每帧。相似度会考虑整段中不同时段的匹配。16 段以内求解当前评分下的最小总差异，更多片段使用多起点搜索和局部调整。`natural` 和 `smooth` 均可在空模型缓存、离线的环境中运行。
+
+## 编码、画幅与耗时
+
+默认 `--codec auto` 在 H.264、HEVC 和 AV1 中选择可直接复制总时长最多的编码、显示画幅、旋转和色彩组合。检查也涵盖像素比例、位深、HDR 传递函数、关键帧、隐藏参考帧和时间戳。需要转换的片段会适配画布并补边。HDR/SDR 转换使用 FFmpeg 的色彩变换，旧版 FFmpeg 使用 zscale 和 tonemap。转码需要本机 FFmpeg 有对应的视频编码器。
+
+```sh
+uv run stideo clips --order natural --codec h264 -o delivery.mp4
+uv run stideo clips --codec hevc --size 1080x1920 --fps 30000/1001 -o portrait.mp4
+uv run stideo clips --codec av1 --report run.json -o archive.mp4
+```
+
+音频会对齐成连续的 48 kHz 双声道 AAC，无声片段补静音。封装完成后会解码检查接缝和随机定位，必要时对相关片段转码重试。每次运行都输出各阶段耗时。`--report run.json` 额外记录播放顺序、取样数、可复制秒数、计划和实际复制结果。预览的实际复制字段为 `null`。
+
+## 模型缓存和离线使用
+
+```sh
+uv run stideo --fetch-model
+uv run stideo --offline --fetch-model
+uv run stideo clips --offline --dry-run
+```
+
+模型权重来自固定修订版，以 SHA-256 校验。默认缓存为 `${XDG_CACHE_HOME:-~/.cache}/stitch-videos/models/dinov2-small-int8.onnx`。从原脚本迁移、重新克隆或新建虚拟环境都能复用同一文件。可以用 `STIDEO_MODEL_DIR` 指定模型目录，或把已经校验的同名文件拷贝到离线机器。并发首次运行只下载一次，损坏的缓存会在联网时重新获取。设置 `STIDEO_OFFLINE=1` 可以对所有运行启用离线模型检查。[固定模型版本](https://huggingface.co/Xenova/dinov2-small/tree/c2bb04a51fab207c420665f1946016107bffc701)
+
+## 合成数据与回归测试
+
+```sh
+uv sync --locked
+uv run stideo --fetch-model
+uv run --locked ruff check .
+uv run --locked ruff format --check .
+STIDEO_OFFLINE=1 uv run --locked pytest -q
+uv run python -m tests.datasets /tmp/stideo-fixtures
+```
+
+测试从图形、像素和正弦波生成真实短视频，调用正式 CLI、模型和 FFmpeg。生成器可以使用 `--only scenes bridges` 只生成指定数据集。完整套件需要带 libx264、libx265、libsvtav1 和 AAC 的 FFmpeg。生成的素材和成片都写在临时目录。
+
+| 数据集 | 能检出的变化 |
+| --- | --- |
+| `scenes` | 六段共用片头片尾。火车、松树、灯塔各有两种配色。测试要求三对都相邻，允许互换组序和方向，并核对成片的实际播放次序 |
+| `bridges` | 四个指定方向的颜色接缝，文件名故意打乱。检验首尾排序和数字排序的不同答案 |
+| `sounds`、`motion` | 相同画面中的不同音调，或同一纹理的相反运动。共同片头片尾和交叉编号让排序依赖片段内部 |
+| `cuts` | 常规采样之间的短暂切镜，检查稀疏模式的额外取样和逐帧模式的覆盖 |
+| `codecs` | 少数长 H.264、多数短 HEVC、AV1、不同 B 帧和有声/静音交错。对四种编码选择核对复制秒数、逐包哈希、显示时间、逐帧误差和声音频率 |
+| `geometry`、`ranges` | 元数据旋转、物理竖屏、分辨率、强制画布、PQ 10 位和 SDR。同一组灰阶色块检验转换后的像素值与色彩标签 |
+| `timing` | 带隐藏参考帧的剪切、可变帧率、比画面长的音轨。检查直接复制时的时间戳及强制帧率后的时间网格 |
+
+## 比较模型或算法的效率
+
+```sh
+uv run python -m tests.benchmark --output /tmp/stideo-before.json
+# 在同一台机器上切换算法或模型，再运行
+uv run python -m tests.benchmark --baseline /tmp/stideo-before.json --output /tmp/stideo-after.json
+```
+
+基准覆盖三种排序和四种编码策略。默认每项完整导出三次，取进程总耗时与关键阶段的中位数，另记录模型取样数和实际复制秒数。初次模型下载和素材生成在计时之外。默认耗时阈值取基线的 50% 与 0.35 秒中的较大值，复制时长减少也会返回失败。可以用 `--repeats` 和 `--tolerance` 调整。PR 的基线和候选版本在同一个 Linux runner 上处理同一批素材，JSON 可从 Actions 下载。合成场景用于发现可重复的退化，真实拍摄素材的主观连贯性仍适合单独评估。
