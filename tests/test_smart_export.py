@@ -33,7 +33,6 @@ class SmartExportTest(unittest.TestCase):
         encoders = subprocess.check_output(["ffmpeg", "-hide_banner", "-encoders"], text=True)
         if "libx264 " not in encoders or "libx265 " not in encoders:
             self.skipTest("测试素材需要 libx264 和 libx265")
-        script = Path(__file__).with_name("stitch_videos.py").resolve()
         # 两个 H.264 片段的总时长超过三个 HEVC 片段。两个 H.264 的解码配置也不同。
         sources = [("h264", 48, 0), ("hevc", 6, 0), ("h264", 24, 3), ("hevc", 6, 0), ("hevc", 6, 0)]
         with tempfile.TemporaryDirectory() as tmp:
@@ -63,7 +62,7 @@ class SmartExportTest(unittest.TestCase):
                     check=True,
                 )
             output = folder / "合辑" / "test.mp4"
-            cmd = [sys.executable, "-B", str(script), str(folder), "--order", "natural"]
+            cmd = [sys.executable, "-m", "stideo", str(folder), "--order", "natural"]
             log = subprocess.check_output([*cmd, "-o", str(output)], text=True)
             self.assertIn("最终直接复制 2/5 段", log)
             video, audio = probe(output, "-show_streams")["streams"]

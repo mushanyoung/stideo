@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
 
-from mp4_join import Track, assemble
+from stideo.mp4 import Track, assemble
 
 FFMPEG = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error"]
 CODECS = ("h264", "hevc", "av1")

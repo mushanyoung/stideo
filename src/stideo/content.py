@@ -1,4 +1,4 @@
-"""整段内容分析。由 stitch_videos.py 的 content 模式调用。"""
+"""整段内容分析。由 stideo 的 content 模式调用。"""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ from urllib.request import urlopen
 
 import cv2
 import numpy as np
-import onnxruntime as ort
 
 
 MODEL_URL = ("https://huggingface.co/Xenova/dinov2-small/resolve/"
@@ -64,7 +63,8 @@ def frame_features(rgb, model):
     normalized = (scaled.astype(np.float32) / 255 - MODEL_MEAN) / MODEL_STD
     canvas[y*14:(y+rows)*14, x*14:(x+cols)*14] = normalized
     tensor = np.ascontiguousarray(canvas.transpose(2, 0, 1)[None])
-    output, = model.run(["last_hidden_state"], {"pixel_values": tensor})
+    model.setInput(tensor, "pixel_values")
+    output = model.forward("last_hidden_state")
     tokens = output[0]
     patches = unit(tokens[1:].reshape(16, 16, -1)[y:y+rows, x:x+cols])
     regions = []
@@ -258,10 +258,8 @@ def profile(clip, step, model, ffmpeg, stage=nullcontext):
 
 def analyze(clips, step, ffmpeg, stage=nullcontext):
     with stage("加载视觉模型"):
-        options = ort.SessionOptions()
-        options.intra_op_num_threads = min(4, os.cpu_count() or 1)
-        options.inter_op_num_threads = 1
-        model = ort.InferenceSession(model_file(), options, providers=["CPUExecutionProvider"])
+        cv2.setNumThreads(min(4, os.cpu_count() or 1))
+        model = cv2.dnn.readNetFromONNX(model_file())
     result = []
     for i, clip in enumerate(clips, 1):
         print(f"分析整段 [{i}/{len(clips)}] {clip.path.name}", flush=True)

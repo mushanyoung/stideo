@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """默认按整段画面相似度（content）排序并拼接视频。也可按首尾衔接或文件名排序。
 
 content 沿整段比较全画面与局部内容、色彩、构图、纹理和运动，辅以声音及首尾衔接。
@@ -32,7 +31,7 @@ import sys
 import tempfile
 import time
 
-from smart_export import CODECS, FFMPEG, build_plan, render, run
+from stideo.export import CODECS, FFMPEG, build_plan, render, run
 
 
 VIDEO_EXTENSIONS = {
@@ -46,20 +45,13 @@ EDGE_SECONDS = 0.75
 EXACT_LIMIT = 16
 
 
-def shared_clock():
-    # macOS 自带 Python 3.9 的 monotonic() 以进程启动为零点。POSIX 时钟可跨解释器读数。
-    if hasattr(time, "CLOCK_MONOTONIC"):
-        return time.clock_gettime(time.CLOCK_MONOTONIC)
-    return time.monotonic()
-
-
 class Timings:
     def __init__(self):
-        self.started = float(os.environ.pop("STITCH_TIMING_START", shared_clock()))
+        self.started = time.monotonic()
         self.seconds = {}
 
     def elapsed(self):
-        return shared_clock() - self.started
+        return time.monotonic() - self.started
 
     @contextmanager
     def stage(self, name):
@@ -413,28 +405,8 @@ def smooth_order(clips, stage=nullcontext):
     return [clips[i] for i in path]
 
 
-def load_content_runtime(started):
-    if not Path(__file__).resolve().with_name("clip_content.py").is_file():
-        raise ValueError("请将 clip_content.py 与 stitch_videos.py 放在同一目录，再运行内容排序")
-    try:
-        import clip_content
-        return clip_content
-    except (ImportError, OSError) as error:
-        uv = shutil.which("uv")
-        runtime, opencv = "onnxruntime==1.23.2", "opencv-python-headless==4.14.0.94"
-        if not uv or os.environ.get("STITCH_CONTENT_RUNTIME") == "1":
-            raise ValueError(f"无法加载内容分析环境（{error}）。可安装 uv 后重试，"
-                             f"或在 Python 3.12 环境运行 pip install {runtime} {opencv}") from error
-        print("准备内容分析所用的独立 Python 环境…", flush=True)
-        command = [uv, "run", "--no-project", "--python", "3.12", "--with", runtime,
-                   "--with", opencv, "--", "python", "-B", str(Path(__file__).resolve()), *sys.argv[1:]]
-        os.execve(uv, command, {**os.environ, "STITCH_CONTENT_RUNTIME": "1",
-                                "STITCH_TIMING_START": str(started)})
-
-
-def content_order(clips, step, analysis=None, stage=nullcontext):
-    if analysis is None:
-        analysis = load_content_runtime(shared_clock())
+def content_order(clips, step, stage=nullcontext):
+    from stideo import content as analysis
     profiles = analysis.analyze(clips, step, FFMPEG, stage)
     if len(clips) == 1:
         return clips, {}
@@ -510,7 +482,6 @@ def main():
                                   for i, s in enumerate(re.split(r"(\d+)", p.name))])
     if not paths:
         parser.error(f"目录中没有找到视频：{folder}")
-    analysis = load_content_runtime(timings.started) if args.order == "content" else None
     timings.seconds["启动、扫描目录与环境准备"] = timings.elapsed()
     clips = []
     with timings.stage("读取媒体参数"):
@@ -527,7 +498,7 @@ def main():
     if args.order == "smooth" and len(clips) > 1:
         clips = smooth_order(clips, timings.stage)
     elif args.order == "content":
-        clips, notes = content_order(clips, args.content_step, analysis, timings.stage)
+        clips, notes = content_order(clips, args.content_step, timings.stage)
     print(f"排序完成，自启动起 {timings.elapsed():.3f} 秒。", flush=True)
     print(f"共 {len(clips)} 段。播放顺序")
     for i, clip in enumerate(clips, 1):
@@ -542,7 +513,7 @@ def main():
     timings.report()
 
 
-if __name__ == "__main__":
+def entrypoint():
     try:
         main()
     except (OSError, ValueError) as exc:

@@ -1,0 +1,23 @@
+[project]
+name = "stideo"
+version = "0.1.0"
+description = "Stitch video clips by whole-clip similarity, boundary continuity or natural filename order."
+requires-python = ">=3.15,<3.16"
+dependencies = [
+    "numpy>=2.5,<3",
+    "opencv-python-headless>=5.1,<6",
+]
+
+[project.scripts]
+stideo = "stideo.cli:entrypoint"
+
+[dependency-groups]
+dev = ["pytest==9.2.0", "ruff==0.17.6"]
+
+[build-system]
+requires = ["uv_build>=0.13,<0.14"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
