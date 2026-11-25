@@ -1,7 +1,7 @@
 """Behavioral ranking oracles independent of the embedding coordinates or score scale."""
 
 from itertools import pairwise, permutations
-from pathlib import Path
+lazy from pathlib import Path
 
 import numpy as np
 import pytest

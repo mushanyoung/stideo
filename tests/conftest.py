@@ -1,6 +1,6 @@
 """Build the generated media once per test session."""
 
-from pathlib import Path
+lazy from pathlib import Path
 
 import pytest
 

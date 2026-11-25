@@ -3,8 +3,8 @@
 import json
 import subprocess
 import sys
-from pathlib import Path
 from typing import Any
+lazy from pathlib import Path
 
 import numpy as np
 
