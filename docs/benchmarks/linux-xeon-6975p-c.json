@@ -1,0 +1,2161 @@
+{
+  "version": 1,
+  "fixture_sha256": "66c103334856b25f618daa50bf9f30957ef18f25daa937fbf433a6eba8d49430",
+  "platform": "Linux",
+  "cpu": "Intel(R) Xeon(R) 6975P-C",
+  "arch": "x86_64",
+  "python": "3.15.2",
+  "opencv": "5.1.0",
+  "threads": 4,
+  "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+  "default_model": "dinov2-small-int8",
+  "models": {
+    "dinov2-small-int8": {
+      "weights_bytes": 24451943,
+      "peak_rss_mib": 178.10546875,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.8402777777777777,
+              "top1": 0.8333333333333334,
+              "adjacency": 0.75,
+              "class_ap": {
+                "biplane": 0.9166666666666666,
+                "chair": 0.8055555555555555,
+                "table": 0.6944444444444444,
+                "tugboat": 0.9444444444444444
+              },
+              "order": [
+                "clip09.mp4",
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip06.mp4",
+                "clip11.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 3.731782537000001,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip06.mp4",
+                "clip09.mp4",
+                "clip02.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip05.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip07.mp4"
+              ],
+              "sort_seconds": 3.8884430760000015,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.3197646103896104,
+              "top1": 0.25,
+              "adjacency": 0.25,
+              "class_ap": {
+                "biplane": 0.22936507936507936,
+                "chair": 0.37824074074074077,
+                "table": 0.19645262145262146,
+                "tugboat": 0.475
+              },
+              "order": [
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip09.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip02.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip06.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 4.883039734999997,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.801303174931818,
+              "top1": 0.8666666666666667,
+              "adjacency": 0.84,
+              "class_ap": {
+                "daisy": 0.9822222222222222,
+                "dandelion": 0.744508014098598,
+                "roses": 0.8166522366522366,
+                "sunflowers": 0.9236375661375661,
+                "tulips": 0.5394958355484671
+              },
+              "order": [
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip17.mp4",
+                "clip28.mp4",
+                "clip25.mp4",
+                "clip23.mp4",
+                "clip29.mp4",
+                "clip03.mp4",
+                "clip16.mp4",
+                "clip12.mp4",
+                "clip10.mp4",
+                "clip08.mp4",
+                "clip24.mp4",
+                "clip19.mp4",
+                "clip00.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip27.mp4",
+                "clip26.mp4",
+                "clip11.mp4",
+                "clip14.mp4",
+                "clip20.mp4",
+                "clip21.mp4",
+                "clip09.mp4",
+                "clip15.mp4",
+                "clip13.mp4",
+                "clip22.mp4",
+                "clip07.mp4"
+              ],
+              "sort_seconds": 9.647864343999998,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.7403363907748015,
+            "top1": 0.7375,
+            "adjacency": 0.71
+          },
+          "timing": {
+            "load_seconds": 0.18964207700000202,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 45.02394555555611,
+            "frame_p95_ms": 46.36732249999227,
+            "sort_seconds": 1.476346336000006,
+            "sort_trials_seconds": [
+              1.479485206999982,
+              1.476346336000006,
+              1.468661824999998
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.9027777777777778,
+              "top1": 0.9166666666666666,
+              "adjacency": 1.0,
+              "class_ap": {
+                "biplane": 0.75,
+                "chair": 1.0,
+                "table": 0.9444444444444444,
+                "tugboat": 0.9166666666666666
+              },
+              "order": [
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip08.mp4",
+                "clip00.mp4",
+                "clip07.mp4",
+                "clip10.mp4",
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip03.mp4",
+                "clip04.mp4",
+                "clip09.mp4",
+                "clip11.mp4"
+              ],
+              "sort_seconds": 3.6953677890000165,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip02.mp4",
+                "clip05.mp4",
+                "clip09.mp4",
+                "clip08.mp4",
+                "clip06.mp4",
+                "clip04.mp4",
+                "clip01.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip07.mp4",
+                "clip00.mp4",
+                "clip03.mp4"
+              ],
+              "sort_seconds": 3.8533379630000013,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.26784962722462724,
+              "top1": 0.0,
+              "adjacency": 0.25,
+              "class_ap": {
+                "biplane": 0.19398148148148148,
+                "chair": 0.30277777777777776,
+                "table": 0.36706349206349204,
+                "tugboat": 0.20757575757575758
+              },
+              "order": [
+                "clip03.mp4",
+                "clip06.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip01.mp4",
+                "clip07.mp4",
+                "clip08.mp4",
+                "clip09.mp4"
+              ],
+              "sort_seconds": 4.733713564999988,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.8031217636852311,
+              "top1": 0.8666666666666667,
+              "adjacency": 0.84,
+              "class_ap": {
+                "daisy": 0.7881313131313131,
+                "dandelion": 0.5480799583972958,
+                "roses": 0.9190873015873016,
+                "sunflowers": 0.829013949013949,
+                "tulips": 0.9312962962962963
+              },
+              "order": [
+                "clip18.mp4",
+                "clip29.mp4",
+                "clip10.mp4",
+                "clip23.mp4",
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip28.mp4",
+                "clip21.mp4",
+                "clip27.mp4",
+                "clip16.mp4",
+                "clip02.mp4",
+                "clip15.mp4",
+                "clip20.mp4",
+                "clip25.mp4",
+                "clip17.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip11.mp4",
+                "clip19.mp4",
+                "clip22.mp4",
+                "clip06.mp4",
+                "clip14.mp4",
+                "clip01.mp4",
+                "clip26.mp4",
+                "clip13.mp4",
+                "clip24.mp4",
+                "clip12.mp4"
+              ],
+              "sort_seconds": 9.442922078999999,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.743437292171909,
+            "top1": 0.6958333333333333,
+            "adjacency": 0.7725
+          },
+          "timing": {
+            "load_seconds": 0.1896334040000056,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 43.89611872222253,
+            "frame_p95_ms": 45.01792235001716,
+            "sort_seconds": 1.5006325749999974,
+            "sort_trials_seconds": [
+              1.5006325749999974,
+              1.5111655740000174,
+              1.4810129840000172
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    },
+    "dinov2-small-fp32": {
+      "weights_bytes": 88459888,
+      "peak_rss_mib": 361.765625,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.8472222222222222,
+              "top1": 0.8333333333333334,
+              "adjacency": 0.75,
+              "class_ap": {
+                "biplane": 0.9166666666666666,
+                "chair": 0.8055555555555555,
+                "table": 0.7222222222222222,
+                "tugboat": 0.9444444444444444
+              },
+              "order": [
+                "clip09.mp4",
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip06.mp4",
+                "clip11.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 3.8294660390000104,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip05.mp4",
+                "clip01.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip07.mp4"
+              ],
+              "sort_seconds": 3.8154462100000046,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.34019059644059646,
+              "top1": 0.3333333333333333,
+              "adjacency": 0.25,
+              "class_ap": {
+                "biplane": 0.24603174603174602,
+                "chair": 0.46620370370370373,
+                "table": 0.18514309764309764,
+                "tugboat": 0.4633838383838384
+              },
+              "order": [
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip09.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip02.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip06.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 4.720925684000008,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.8022354009366394,
+              "top1": 0.8666666666666667,
+              "adjacency": 0.84,
+              "class_ap": {
+                "daisy": 0.9822222222222222,
+                "dandelion": 0.742800089201018,
+                "roses": 0.8194300144300144,
+                "sunflowers": 0.9191931216931216,
+                "tulips": 0.5475315571368203
+              },
+              "order": [
+                "clip00.mp4",
+                "clip19.mp4",
+                "clip24.mp4",
+                "clip08.mp4",
+                "clip27.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip26.mp4",
+                "clip11.mp4",
+                "clip14.mp4",
+                "clip20.mp4",
+                "clip21.mp4",
+                "clip09.mp4",
+                "clip15.mp4",
+                "clip13.mp4",
+                "clip22.mp4",
+                "clip07.mp4",
+                "clip25.mp4",
+                "clip28.mp4",
+                "clip17.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip29.mp4",
+                "clip23.mp4",
+                "clip10.mp4",
+                "clip12.mp4",
+                "clip16.mp4",
+                "clip03.mp4",
+                "clip06.mp4"
+              ],
+              "sort_seconds": 9.488311401000004,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.7474120548998645,
+            "top1": 0.7583333333333333,
+            "adjacency": 0.71
+          },
+          "timing": {
+            "load_seconds": 0.16257764200000224,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 44.15779163888879,
+            "frame_p95_ms": 44.9610529500049,
+            "sort_seconds": 1.420046321000001,
+            "sort_trials_seconds": [
+              1.4198754880000024,
+              1.42756666599999,
+              1.420046321000001
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.9097222222222222,
+              "top1": 0.9166666666666666,
+              "adjacency": 0.875,
+              "class_ap": {
+                "biplane": 0.75,
+                "chair": 1.0,
+                "table": 0.9444444444444444,
+                "tugboat": 0.9444444444444444
+              },
+              "order": [
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip00.mp4",
+                "clip07.mp4",
+                "clip10.mp4",
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip04.mp4",
+                "clip09.mp4",
+                "clip11.mp4"
+              ],
+              "sort_seconds": 3.7083692530000008,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip05.mp4",
+                "clip09.mp4",
+                "clip02.mp4",
+                "clip01.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip04.mp4",
+                "clip06.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip00.mp4",
+                "clip07.mp4"
+              ],
+              "sort_seconds": 3.8563603030000024,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.2783324314574315,
+              "top1": 0.0,
+              "adjacency": 0.125,
+              "class_ap": {
+                "biplane": 0.18908730158730158,
+                "chair": 0.27499999999999997,
+                "table": 0.42777777777777776,
+                "tugboat": 0.22146464646464648
+              },
+              "order": [
+                "clip03.mp4",
+                "clip06.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip01.mp4",
+                "clip08.mp4",
+                "clip09.mp4"
+              ],
+              "sort_seconds": 4.756725581000012,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.8092246143296487,
+              "top1": 0.8666666666666667,
+              "adjacency": 0.84,
+              "class_ap": {
+                "daisy": 0.7855050505050505,
+                "dandelion": 0.5553811284062999,
+                "roses": 0.9136038961038961,
+                "sunflowers": 0.849503367003367,
+                "tulips": 0.9421296296296297
+              },
+              "order": [
+                "clip21.mp4",
+                "clip28.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip27.mp4",
+                "clip16.mp4",
+                "clip02.mp4",
+                "clip15.mp4",
+                "clip20.mp4",
+                "clip25.mp4",
+                "clip17.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip11.mp4",
+                "clip19.mp4",
+                "clip29.mp4",
+                "clip10.mp4",
+                "clip23.mp4",
+                "clip08.mp4",
+                "clip14.mp4",
+                "clip18.mp4",
+                "clip22.mp4",
+                "clip06.mp4",
+                "clip12.mp4",
+                "clip24.mp4",
+                "clip13.mp4",
+                "clip26.mp4",
+                "clip01.mp4"
+              ],
+              "sort_seconds": 9.654640168000014,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.7493198170023256,
+            "top1": 0.6958333333333333,
+            "adjacency": 0.71
+          },
+          "timing": {
+            "load_seconds": 0.16274344400000018,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 44.1024193611115,
+            "frame_p95_ms": 44.834234249995575,
+            "sort_seconds": 1.477861331000014,
+            "sort_trials_seconds": [
+              1.477861331000014,
+              1.4852640370000074,
+              1.4708231459999865
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    },
+    "dinov2-base-int8": {
+      "weights_bytes": 90974542,
+      "peak_rss_mib": 311.546875,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.4578703703703703,
+              "top1": 0.25,
+              "adjacency": 0.5,
+              "class_ap": {
+                "biplane": 0.5833333333333333,
+                "chair": 0.5249999999999999,
+                "table": 0.32341269841269843,
+                "tugboat": 0.3997354497354497
+              },
+              "order": [
+                "clip09.mp4",
+                "clip05.mp4",
+                "clip00.mp4",
+                "clip10.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip06.mp4",
+                "clip11.mp4"
+              ],
+              "sort_seconds": 6.503383803999981,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip00.mp4",
+                "clip10.mp4",
+                "clip05.mp4",
+                "clip01.mp4",
+                "clip11.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip08.mp4",
+                "clip04.mp4"
+              ],
+              "sort_seconds": 6.564915737000007,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.32542839105339105,
+              "top1": 0.3333333333333333,
+              "adjacency": 0.5,
+              "class_ap": {
+                "biplane": 0.2275132275132275,
+                "chair": 0.45787037037037037,
+                "table": 0.17356902356902357,
+                "tugboat": 0.4427609427609428
+              },
+              "order": [
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip11.mp4",
+                "clip02.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip01.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip10.mp4"
+              ],
+              "sort_seconds": 9.307817510000007,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.6565917987399232,
+              "top1": 0.7666666666666667,
+              "adjacency": 0.64,
+              "class_ap": {
+                "daisy": 0.7210792910792911,
+                "dandelion": 0.6455595156319794,
+                "roses": 0.7548737373737373,
+                "sunflowers": 0.6976323513088218,
+                "tulips": 0.46381409830578624
+              },
+              "order": [
+                "clip29.mp4",
+                "clip23.mp4",
+                "clip12.mp4",
+                "clip10.mp4",
+                "clip16.mp4",
+                "clip11.mp4",
+                "clip27.mp4",
+                "clip01.mp4",
+                "clip18.mp4",
+                "clip19.mp4",
+                "clip00.mp4",
+                "clip17.mp4",
+                "clip04.mp4",
+                "clip02.mp4",
+                "clip05.mp4",
+                "clip03.mp4",
+                "clip09.mp4",
+                "clip13.mp4",
+                "clip22.mp4",
+                "clip07.mp4",
+                "clip15.mp4",
+                "clip25.mp4",
+                "clip14.mp4",
+                "clip26.mp4",
+                "clip21.mp4",
+                "clip20.mp4",
+                "clip08.mp4",
+                "clip24.mp4",
+                "clip06.mp4",
+                "clip28.mp4"
+              ],
+              "sort_seconds": 16.207578454999975,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.6099726400409211,
+            "top1": 0.5875,
+            "adjacency": 0.66
+          },
+          "timing": {
+            "load_seconds": 0.2507924409999873,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 116.6517383611105,
+            "frame_p95_ms": 118.78119179999374,
+            "sort_seconds": 2.7918200469999874,
+            "sort_trials_seconds": [
+              2.8188406869999767,
+              2.7918200469999874,
+              2.7884645930000147
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.5648809523809524,
+              "top1": 0.4166666666666667,
+              "adjacency": 0.625,
+              "class_ap": {
+                "biplane": 0.5059523809523809,
+                "chair": 0.9,
+                "table": 0.3972222222222222,
+                "tugboat": 0.45634920634920634
+              },
+              "order": [
+                "clip11.mp4",
+                "clip09.mp4",
+                "clip04.mp4",
+                "clip07.mp4",
+                "clip06.mp4",
+                "clip05.mp4",
+                "clip10.mp4",
+                "clip03.mp4",
+                "clip00.mp4",
+                "clip08.mp4",
+                "clip02.mp4",
+                "clip01.mp4"
+              ],
+              "sort_seconds": 6.43980415599998,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip07.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip06.mp4",
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip01.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip05.mp4",
+                "clip09.mp4",
+                "clip02.mp4"
+              ],
+              "sort_seconds": 6.562201317000017,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.2621452621452621,
+              "top1": 0.08333333333333333,
+              "adjacency": 0.25,
+              "class_ap": {
+                "biplane": 0.16984126984126985,
+                "chair": 0.26706349206349206,
+                "table": 0.417989417989418,
+                "tugboat": 0.19368686868686869
+              },
+              "order": [
+                "clip07.mp4",
+                "clip01.mp4",
+                "clip08.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip06.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip03.mp4"
+              ],
+              "sort_seconds": 9.213671663000014,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.5959969606819707,
+              "top1": 0.8,
+              "adjacency": 0.76,
+              "class_ap": {
+                "daisy": 0.49112162818112476,
+                "dandelion": 0.5046177315204102,
+                "roses": 0.5985146848157951,
+                "sunflowers": 0.7413603988603988,
+                "tulips": 0.6443703600321247
+              },
+              "order": [
+                "clip18.mp4",
+                "clip12.mp4",
+                "clip26.mp4",
+                "clip13.mp4",
+                "clip24.mp4",
+                "clip23.mp4",
+                "clip29.mp4",
+                "clip10.mp4",
+                "clip20.mp4",
+                "clip15.mp4",
+                "clip19.mp4",
+                "clip11.mp4",
+                "clip16.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip03.mp4",
+                "clip27.mp4",
+                "clip01.mp4",
+                "clip05.mp4",
+                "clip21.mp4",
+                "clip28.mp4",
+                "clip04.mp4",
+                "clip22.mp4",
+                "clip06.mp4",
+                "clip08.mp4",
+                "clip14.mp4",
+                "clip00.mp4",
+                "clip09.mp4",
+                "clip25.mp4",
+                "clip17.mp4"
+              ],
+              "sort_seconds": 16.180913456999974,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.6057557938020464,
+            "top1": 0.5750000000000001,
+            "adjacency": 0.65875
+          },
+          "timing": {
+            "load_seconds": 0.24990310200001886,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 115.89595872222309,
+            "frame_p95_ms": 118.01193900000726,
+            "sort_seconds": 2.9110678889999804,
+            "sort_trials_seconds": [
+              2.8982159760000172,
+              2.9110678889999804,
+              2.9317672910000283
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    },
+    "dino-s16-int8": {
+      "weights_bytes": 22701541,
+      "peak_rss_mib": 178.42578125,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.6916666666666667,
+              "top1": 0.5833333333333334,
+              "adjacency": 0.75,
+              "class_ap": {
+                "biplane": 0.7999999999999999,
+                "chair": 0.7222222222222222,
+                "table": 0.45555555555555555,
+                "tugboat": 0.7888888888888889
+              },
+              "order": [
+                "clip05.mp4",
+                "clip11.mp4",
+                "clip06.mp4",
+                "clip07.mp4",
+                "clip02.mp4",
+                "clip00.mp4",
+                "clip10.mp4",
+                "clip09.mp4",
+                "clip01.mp4",
+                "clip03.mp4",
+                "clip08.mp4",
+                "clip04.mp4"
+              ],
+              "sort_seconds": 3.341290678000007,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip07.mp4",
+                "clip05.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4"
+              ],
+              "sort_seconds": 3.431844204000015,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.322611531986532,
+              "top1": 0.25,
+              "adjacency": 0.5,
+              "class_ap": {
+                "biplane": 0.2509259259259259,
+                "chair": 0.37083333333333335,
+                "table": 0.21363636363636365,
+                "tugboat": 0.4550505050505051
+              },
+              "order": [
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip11.mp4",
+                "clip02.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip01.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip10.mp4"
+              ],
+              "sort_seconds": 4.132058503000053,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.5966818246365435,
+              "top1": 0.7333333333333333,
+              "adjacency": 0.6,
+              "class_ap": {
+                "daisy": 0.7533953083953083,
+                "dandelion": 0.5949939220380103,
+                "roses": 0.6082875343697797,
+                "sunflowers": 0.40869608179071093,
+                "tulips": 0.6180362765889083
+              },
+              "order": [
+                "clip07.mp4",
+                "clip22.mp4",
+                "clip13.mp4",
+                "clip29.mp4",
+                "clip23.mp4",
+                "clip12.mp4",
+                "clip10.mp4",
+                "clip28.mp4",
+                "clip17.mp4",
+                "clip00.mp4",
+                "clip19.mp4",
+                "clip08.mp4",
+                "clip24.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip27.mp4",
+                "clip11.mp4",
+                "clip16.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip03.mp4",
+                "clip15.mp4",
+                "clip25.mp4",
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip14.mp4",
+                "clip21.mp4",
+                "clip20.mp4",
+                "clip26.mp4"
+              ],
+              "sort_seconds": 8.459088887000007,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.6527400058224355,
+            "top1": 0.6416666666666666,
+            "adjacency": 0.7125
+          },
+          "timing": {
+            "load_seconds": 0.1800181830000156,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 32.43966474999935,
+            "frame_p95_ms": 33.05600594998168,
+            "sort_seconds": 1.2375471029999972,
+            "sort_trials_seconds": [
+              1.2437944150000249,
+              1.2291559160000247,
+              1.2375471029999972
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.7777777777777777,
+              "top1": 0.75,
+              "adjacency": 0.75,
+              "class_ap": {
+                "biplane": 0.611111111111111,
+                "chair": 0.9166666666666666,
+                "table": 0.7777777777777778,
+                "tugboat": 0.8055555555555555
+              },
+              "order": [
+                "clip11.mp4",
+                "clip09.mp4",
+                "clip04.mp4",
+                "clip07.mp4",
+                "clip06.mp4",
+                "clip05.mp4",
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip00.mp4",
+                "clip10.mp4"
+              ],
+              "sort_seconds": 3.2034348889999933,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip09.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip01.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip06.mp4",
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip00.mp4"
+              ],
+              "sort_seconds": 3.3578699339999503,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.28580597643097644,
+              "top1": 0.0,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.25787037037037036,
+                "chair": 0.28055555555555556,
+                "table": 0.425,
+                "tugboat": 0.17979797979797982
+              },
+              "order": [
+                "clip06.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip03.mp4",
+                "clip02.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip07.mp4",
+                "clip09.mp4"
+              ],
+              "sort_seconds": 4.065976913999975,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.5358641619802605,
+              "top1": 0.7666666666666667,
+              "adjacency": 0.76,
+              "class_ap": {
+                "daisy": 0.5043132920487993,
+                "dandelion": 0.46163013792249175,
+                "roses": 0.7106565729592045,
+                "sunflowers": 0.46746279337946006,
+                "tulips": 0.535258013591347
+              },
+              "order": [
+                "clip21.mp4",
+                "clip28.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip22.mp4",
+                "clip06.mp4",
+                "clip20.mp4",
+                "clip25.mp4",
+                "clip17.mp4",
+                "clip09.mp4",
+                "clip00.mp4",
+                "clip07.mp4",
+                "clip03.mp4",
+                "clip16.mp4",
+                "clip02.mp4",
+                "clip15.mp4",
+                "clip11.mp4",
+                "clip19.mp4",
+                "clip08.mp4",
+                "clip23.mp4",
+                "clip29.mp4",
+                "clip10.mp4",
+                "clip12.mp4",
+                "clip24.mp4",
+                "clip13.mp4",
+                "clip26.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip27.mp4",
+                "clip14.mp4"
+              ],
+              "sort_seconds": 8.499714455999992,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.6498619790472536,
+            "top1": 0.6291666666666667,
+            "adjacency": 0.72125
+          },
+          "timing": {
+            "load_seconds": 0.1808393100000103,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 32.654201555555716,
+            "frame_p95_ms": 33.14924574997349,
+            "sort_seconds": 1.2790621870000223,
+            "sort_trials_seconds": [
+              1.28537560999996,
+              1.2790621870000223,
+              1.270687582999983
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    },
+    "clip-b32-int8": {
+      "weights_bytes": 89117001,
+      "peak_rss_mib": 309.7890625,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.40865349927849925,
+              "top1": 0.08333333333333333,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.47817460317460314,
+                "chair": 0.5833333333333333,
+                "table": 0.30324074074074076,
+                "tugboat": 0.26986531986531986
+              },
+              "order": [
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip11.mp4",
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip01.mp4",
+                "clip09.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 3.331093927999973,
+              "samples": 36
+            },
+            "locations": {
+              "map": 0.9305555555555556,
+              "top1": 0.9166666666666666,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 0.9444444444444444,
+                "platform": 0.7777777777777778
+              },
+              "order": [
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip05.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip07.mp4"
+              ],
+              "sort_seconds": 3.397632256999998,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.25094396344396347,
+              "top1": 0.0,
+              "adjacency": 0.0,
+              "class_ap": {
+                "biplane": 0.1937169312169312,
+                "chair": 0.30185185185185187,
+                "table": 0.2297979797979798,
+                "tugboat": 0.27840909090909094
+              },
+              "order": [
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip04.mp4",
+                "clip02.mp4",
+                "clip00.mp4",
+                "clip08.mp4",
+                "clip09.mp4",
+                "clip01.mp4"
+              ],
+              "sort_seconds": 3.98034493199998,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.6397902892802487,
+              "top1": 0.7,
+              "adjacency": 0.72,
+              "class_ap": {
+                "daisy": 0.8471115213762273,
+                "dandelion": 0.5445632145632145,
+                "roses": 0.5831663985227203,
+                "sunflowers": 0.7216841246988306,
+                "tulips": 0.5024261872402508
+              },
+              "order": [
+                "clip10.mp4",
+                "clip12.mp4",
+                "clip23.mp4",
+                "clip16.mp4",
+                "clip27.mp4",
+                "clip01.mp4",
+                "clip18.mp4",
+                "clip11.mp4",
+                "clip19.mp4",
+                "clip14.mp4",
+                "clip26.mp4",
+                "clip17.mp4",
+                "clip28.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip02.mp4",
+                "clip06.mp4",
+                "clip25.mp4",
+                "clip07.mp4",
+                "clip22.mp4",
+                "clip15.mp4",
+                "clip09.mp4",
+                "clip13.mp4",
+                "clip03.mp4",
+                "clip29.mp4",
+                "clip00.mp4",
+                "clip24.mp4",
+                "clip08.mp4",
+                "clip20.mp4",
+                "clip21.mp4"
+              ],
+              "sort_seconds": 8.409270976000016,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.5574858268895667,
+            "top1": 0.425,
+            "adjacency": 0.5237499999999999
+          },
+          "timing": {
+            "load_seconds": 0.2532943230000342,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 27.947756027777537,
+            "frame_p95_ms": 28.400891700002262,
+            "sort_seconds": 1.2937287919999676,
+            "sort_trials_seconds": [
+              1.3157048250000116,
+              1.2937287919999676,
+              1.293508294999981
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.5013888888888889,
+              "top1": 0.25,
+              "adjacency": 0.5,
+              "class_ap": {
+                "biplane": 0.4444444444444444,
+                "chair": 0.7333333333333333,
+                "table": 0.3888888888888889,
+                "tugboat": 0.4388888888888889
+              },
+              "order": [
+                "clip02.mp4",
+                "clip08.mp4",
+                "clip03.mp4",
+                "clip00.mp4",
+                "clip07.mp4",
+                "clip06.mp4",
+                "clip04.mp4",
+                "clip09.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip01.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 3.227843409000002,
+              "samples": 36
+            },
+            "locations": {
+              "map": 0.9861111111111112,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 0.9444444444444444
+              },
+              "order": [
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip00.mp4",
+                "clip09.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip01.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip06.mp4",
+                "clip08.mp4",
+                "clip04.mp4"
+              ],
+              "sort_seconds": 3.394699892999995,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.287594696969697,
+              "top1": 0.08333333333333333,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.34120370370370373,
+                "chair": 0.2895622895622896,
+                "table": 0.312037037037037,
+                "tugboat": 0.20757575757575758
+              },
+              "order": [
+                "clip02.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip06.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip03.mp4"
+              ],
+              "sort_seconds": 3.9667783340000256,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.5145208304377706,
+              "top1": 0.7,
+              "adjacency": 0.6,
+              "class_ap": {
+                "daisy": 0.39603775204652397,
+                "dandelion": 0.5007459515792849,
+                "roses": 0.46885915741178896,
+                "sunflowers": 0.5058977958230538,
+                "tulips": 0.7010634953282012
+              },
+              "order": [
+                "clip10.mp4",
+                "clip29.mp4",
+                "clip23.mp4",
+                "clip20.mp4",
+                "clip25.mp4",
+                "clip17.mp4",
+                "clip07.mp4",
+                "clip03.mp4",
+                "clip27.mp4",
+                "clip04.mp4",
+                "clip22.mp4",
+                "clip24.mp4",
+                "clip13.mp4",
+                "clip26.mp4",
+                "clip05.mp4",
+                "clip28.mp4",
+                "clip14.mp4",
+                "clip08.mp4",
+                "clip06.mp4",
+                "clip16.mp4",
+                "clip15.mp4",
+                "clip02.mp4",
+                "clip19.mp4",
+                "clip11.mp4",
+                "clip09.mp4",
+                "clip00.mp4",
+                "clip12.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip21.mp4"
+              ],
+              "sort_seconds": 8.346962043000019,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.5724038818518669,
+            "top1": 0.5083333333333333,
+            "adjacency": 0.61875
+          },
+          "timing": {
+            "load_seconds": 0.25074606000003996,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 27.44998461111139,
+            "frame_p95_ms": 28.143285199999468,
+            "sort_seconds": 1.3368578199999774,
+            "sort_trials_seconds": [
+              1.3368578199999774,
+              1.3234970580000436,
+              1.3371585180000238
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    },
+    "siglip2-b32-int8": {
+      "weights_bytes": 95915855,
+      "peak_rss_mib": 319.9375,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.4060185185185185,
+              "top1": 0.08333333333333333,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.5416666666666666,
+                "chair": 0.5277777777777777,
+                "table": 0.30833333333333335,
+                "tugboat": 0.2462962962962963
+              },
+              "order": [
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip07.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip01.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip09.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 3.5556069510000157,
+              "samples": 36
+            },
+            "locations": {
+              "map": 0.9861111111111112,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 0.9444444444444444
+              },
+              "order": [
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip07.mp4",
+                "clip05.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4"
+              ],
+              "sort_seconds": 3.5405482060000395,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.2842276936026936,
+              "top1": 0.08333333333333333,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.22196969696969698,
+                "chair": 0.2881734006734007,
+                "table": 0.2673400673400673,
+                "tugboat": 0.35942760942760943
+              },
+              "order": [
+                "clip06.mp4",
+                "clip05.mp4",
+                "clip11.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip02.mp4",
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip09.mp4",
+                "clip07.mp4",
+                "clip03.mp4",
+                "clip10.mp4"
+              ],
+              "sort_seconds": 4.229584749999958,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.5834374794701361,
+              "top1": 0.7,
+              "adjacency": 0.56,
+              "class_ap": {
+                "daisy": 0.6975762953936328,
+                "dandelion": 0.671756993006993,
+                "roses": 0.49636539386539386,
+                "sunflowers": 0.6461302803949863,
+                "tulips": 0.40535843468967464
+              },
+              "order": [
+                "clip14.mp4",
+                "clip26.mp4",
+                "clip00.mp4",
+                "clip06.mp4",
+                "clip25.mp4",
+                "clip22.mp4",
+                "clip07.mp4",
+                "clip13.mp4",
+                "clip09.mp4",
+                "clip15.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip18.mp4",
+                "clip19.mp4",
+                "clip24.mp4",
+                "clip08.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip17.mp4",
+                "clip02.mp4",
+                "clip03.mp4",
+                "clip10.mp4",
+                "clip28.mp4",
+                "clip12.mp4",
+                "clip23.mp4",
+                "clip29.mp4",
+                "clip27.mp4",
+                "clip16.mp4",
+                "clip20.mp4",
+                "clip21.mp4"
+              ],
+              "sort_seconds": 8.672642568000015,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.5649487006756149,
+            "top1": 0.4666666666666667,
+            "adjacency": 0.5775
+          },
+          "timing": {
+            "load_seconds": 0.22989030299999058,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 34.0279400833323,
+            "frame_p95_ms": 34.52730625000413,
+            "sort_seconds": 1.3971456269999862,
+            "sort_trials_seconds": [
+              1.4059302580000121,
+              1.3971456269999862,
+              1.3944754890000013
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.5410714285714286,
+              "top1": 0.4166666666666667,
+              "adjacency": 0.625,
+              "class_ap": {
+                "biplane": 0.5055555555555555,
+                "chair": 0.675,
+                "table": 0.46150793650793653,
+                "tugboat": 0.5222222222222223
+              },
+              "order": [
+                "clip11.mp4",
+                "clip09.mp4",
+                "clip04.mp4",
+                "clip07.mp4",
+                "clip06.mp4",
+                "clip05.mp4",
+                "clip01.mp4",
+                "clip10.mp4",
+                "clip00.mp4",
+                "clip03.mp4",
+                "clip08.mp4",
+                "clip02.mp4"
+              ],
+              "sort_seconds": 3.441358779999973,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip05.mp4",
+                "clip08.mp4",
+                "clip06.mp4",
+                "clip04.mp4",
+                "clip01.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip07.mp4",
+                "clip00.mp4",
+                "clip03.mp4"
+              ],
+              "sort_seconds": 3.61390583299999,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.2993010461760462,
+              "top1": 0.08333333333333333,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.21502525252525254,
+                "chair": 0.39206349206349206,
+                "table": 0.40595238095238095,
+                "tugboat": 0.18416305916305917
+              },
+              "order": [
+                "clip02.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip06.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip10.mp4"
+              ],
+              "sort_seconds": 4.305610207000029,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.39183809937166464,
+              "top1": 0.43333333333333335,
+              "adjacency": 0.56,
+              "class_ap": {
+                "daisy": 0.3427526025103243,
+                "dandelion": 0.4550589688566985,
+                "roses": 0.3753922109881862,
+                "sunflowers": 0.4568480512340162,
+                "tulips": 0.329138663269098
+              },
+              "order": [
+                "clip21.mp4",
+                "clip28.mp4",
+                "clip05.mp4",
+                "clip04.mp4",
+                "clip22.mp4",
+                "clip08.mp4",
+                "clip06.mp4",
+                "clip20.mp4",
+                "clip23.mp4",
+                "clip00.mp4",
+                "clip19.mp4",
+                "clip29.mp4",
+                "clip10.mp4",
+                "clip13.mp4",
+                "clip24.mp4",
+                "clip26.mp4",
+                "clip12.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip27.mp4",
+                "clip14.mp4",
+                "clip03.mp4",
+                "clip07.mp4",
+                "clip09.mp4",
+                "clip11.mp4",
+                "clip02.mp4",
+                "clip15.mp4",
+                "clip25.mp4",
+                "clip17.mp4",
+                "clip16.mp4"
+              ],
+              "sort_seconds": 8.799553002000039,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.5580526435297849,
+            "top1": 0.48333333333333334,
+            "adjacency": 0.64
+          },
+          "timing": {
+            "load_seconds": 0.2302903280000237,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 33.56511369444585,
+            "frame_p95_ms": 34.35296274996631,
+            "sort_seconds": 1.4281609759999583,
+            "sort_trials_seconds": [
+              1.43256243299993,
+              1.4281609759999583,
+              1.4190778290000026
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    },
+    "mobilevit-xxs": {
+      "weights_bytes": 5394387,
+      "peak_rss_mib": 136.80078125,
+      "splits": {
+        "dev": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.7201388888888889,
+              "top1": 0.5833333333333334,
+              "adjacency": 0.75,
+              "class_ap": {
+                "biplane": 0.9444444444444444,
+                "chair": 0.6944444444444444,
+                "table": 0.44166666666666665,
+                "tugboat": 0.7999999999999999
+              },
+              "order": [
+                "clip09.mp4",
+                "clip01.mp4",
+                "clip00.mp4",
+                "clip10.mp4",
+                "clip07.mp4",
+                "clip02.mp4",
+                "clip06.mp4",
+                "clip05.mp4",
+                "clip11.mp4",
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip03.mp4"
+              ],
+              "sort_seconds": 2.2525290209999866,
+              "samples": 36
+            },
+            "locations": {
+              "map": 0.9791666666666666,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 0.9166666666666666,
+                "platform": 1.0
+              },
+              "order": [
+                "clip04.mp4",
+                "clip08.mp4",
+                "clip07.mp4",
+                "clip03.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip00.mp4",
+                "clip10.mp4",
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip02.mp4",
+                "clip09.mp4"
+              ],
+              "sort_seconds": 2.328019536000056,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.3533790283790284,
+              "top1": 0.3333333333333333,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.19603174603174603,
+                "chair": 0.3851851851851852,
+                "table": 0.3716931216931217,
+                "tugboat": 0.46060606060606063
+              },
+              "order": [
+                "clip05.mp4",
+                "clip06.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip03.mp4",
+                "clip08.mp4",
+                "clip01.mp4",
+                "clip09.mp4",
+                "clip07.mp4",
+                "clip04.mp4",
+                "clip00.mp4",
+                "clip02.mp4"
+              ],
+              "sort_seconds": 2.4636319830000275,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.6159349029501248,
+              "top1": 0.7333333333333333,
+              "adjacency": 0.6,
+              "class_ap": {
+                "daisy": 0.8311432621958937,
+                "dandelion": 0.7586339586339587,
+                "roses": 0.5974906574906574,
+                "sunflowers": 0.32204673398687844,
+                "tulips": 0.5703599024432358
+              },
+              "order": [
+                "clip10.mp4",
+                "clip23.mp4",
+                "clip12.mp4",
+                "clip29.mp4",
+                "clip16.mp4",
+                "clip28.mp4",
+                "clip17.mp4",
+                "clip00.mp4",
+                "clip11.mp4",
+                "clip19.mp4",
+                "clip08.mp4",
+                "clip24.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip26.mp4",
+                "clip27.mp4",
+                "clip14.mp4",
+                "clip05.mp4",
+                "clip03.mp4",
+                "clip15.mp4",
+                "clip22.mp4",
+                "clip07.mp4",
+                "clip13.mp4",
+                "clip09.mp4",
+                "clip02.mp4",
+                "clip04.mp4",
+                "clip06.mp4",
+                "clip25.mp4",
+                "clip20.mp4",
+                "clip21.mp4"
+              ],
+              "sort_seconds": 6.09796407500005,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.6671548717211772,
+            "top1": 0.6625,
+            "adjacency": 0.68125
+          },
+          "timing": {
+            "load_seconds": 0.052105714000049375,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 9.176499861110996,
+            "frame_p95_ms": 9.290503899984515,
+            "sort_seconds": 0.6735339349999094,
+            "sort_trials_seconds": [
+              0.6735339349999094,
+              0.6826773940000521,
+              0.6705926739999768
+            ],
+            "sampled_frames": 18
+          }
+        },
+        "holdout": {
+          "cases": {
+            "viewpoints": {
+              "map": 0.8333333333333333,
+              "top1": 0.8333333333333334,
+              "adjacency": 0.75,
+              "class_ap": {
+                "biplane": 0.6666666666666666,
+                "chair": 1.0,
+                "table": 0.8055555555555555,
+                "tugboat": 0.861111111111111
+              },
+              "order": [
+                "clip04.mp4",
+                "clip09.mp4",
+                "clip11.mp4",
+                "clip10.mp4",
+                "clip01.mp4",
+                "clip08.mp4",
+                "clip02.mp4",
+                "clip03.mp4",
+                "clip00.mp4",
+                "clip07.mp4",
+                "clip06.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 2.2840828070000043,
+              "samples": 36
+            },
+            "locations": {
+              "map": 1.0,
+              "top1": 1.0,
+              "adjacency": 1.0,
+              "class_ap": {
+                "bookshop": 1.0,
+                "greenhouse": 1.0,
+                "harbor": 1.0,
+                "platform": 1.0
+              },
+              "order": [
+                "clip00.mp4",
+                "clip07.mp4",
+                "clip03.mp4",
+                "clip06.mp4",
+                "clip08.mp4",
+                "clip04.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip01.mp4",
+                "clip02.mp4",
+                "clip09.mp4",
+                "clip05.mp4"
+              ],
+              "sort_seconds": 2.4709820030000174,
+              "samples": 36
+            },
+            "cutaways": {
+              "map": 0.34077982202982204,
+              "top1": 0.25,
+              "adjacency": 0.375,
+              "class_ap": {
+                "biplane": 0.2599206349206349,
+                "chair": 0.4793771043771044,
+                "table": 0.42592592592592593,
+                "tugboat": 0.1978956228956229
+              },
+              "order": [
+                "clip09.mp4",
+                "clip07.mp4",
+                "clip01.mp4",
+                "clip08.mp4",
+                "clip00.mp4",
+                "clip04.mp4",
+                "clip05.mp4",
+                "clip02.mp4",
+                "clip10.mp4",
+                "clip11.mp4",
+                "clip03.mp4",
+                "clip06.mp4"
+              ],
+              "sort_seconds": 2.5551881829999274,
+              "samples": 60
+            },
+            "flowers": {
+              "map": 0.48622492091612407,
+              "top1": 0.6,
+              "adjacency": 0.6,
+              "class_ap": {
+                "daisy": 0.37856681884029664,
+                "dandelion": 0.4772542862316358,
+                "roses": 0.536457891237303,
+                "sunflowers": 0.45797920615498283,
+                "tulips": 0.5808664021164021
+              },
+              "order": [
+                "clip26.mp4",
+                "clip13.mp4",
+                "clip24.mp4",
+                "clip04.mp4",
+                "clip22.mp4",
+                "clip09.mp4",
+                "clip07.mp4",
+                "clip11.mp4",
+                "clip02.mp4",
+                "clip16.mp4",
+                "clip20.mp4",
+                "clip15.mp4",
+                "clip17.mp4",
+                "clip25.mp4",
+                "clip00.mp4",
+                "clip19.mp4",
+                "clip23.mp4",
+                "clip29.mp4",
+                "clip10.mp4",
+                "clip28.mp4",
+                "clip05.mp4",
+                "clip21.mp4",
+                "clip14.mp4",
+                "clip03.mp4",
+                "clip08.mp4",
+                "clip06.mp4",
+                "clip12.mp4",
+                "clip18.mp4",
+                "clip01.mp4",
+                "clip27.mp4"
+              ],
+              "sort_seconds": 6.353977729999997,
+              "samples": 90
+            }
+          },
+          "macro": {
+            "map": 0.6650845190698198,
+            "top1": 0.6708333333333334,
+            "adjacency": 0.68125
+          },
+          "timing": {
+            "load_seconds": 0.051989192999940315,
+            "frames_per_pass": 36,
+            "rounds": 3,
+            "ms_per_frame": 9.203077861112913,
+            "frame_p95_ms": 9.355720449997307,
+            "sort_seconds": 0.7027139369999986,
+            "sort_trials_seconds": [
+              0.7025449289999415,
+              0.7027139369999986,
+              0.705499619999955
+            ],
+            "sampled_frames": 18
+          }
+        }
+      }
+    }
+  },
+  "decision": {
+    "status": "retain",
+    "recommended": "dinov2-small-int8",
+    "dev_candidate": null
+  }
+}
