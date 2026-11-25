@@ -12,7 +12,7 @@ lazy from fractions import Fraction
 
 from stideo.export import CODECS, Plan, build_plan, render
 from stideo.media import Clip, canvas, common_fps, probe, ratio
-from stideo.models import model_file
+from stideo.models import DEFAULT_MODEL, MODELS, model_file
 from stideo.ordering import EDGE_SECONDS, EXACT_LIMIT, content_order, smooth_order
 from stideo.timing import Timings
 
@@ -92,6 +92,9 @@ def argument_parser() -> argparse.ArgumentParser:
         metavar="帧率",
         help="指定固定输出帧率。默认保留复制片段的时间戳，转码片段按素材选择，最高 60",
     )
+    parser.add_argument(
+        "--model", choices=MODELS, default=DEFAULT_MODEL, help="content 使用的视觉模型。默认 %(default)s"
+    )
     parser.add_argument("--fetch-model", action="store_true", help="下载或校验视觉模型，输出路径并退出")
     parser.add_argument("--offline", action="store_true", help="仅使用已校验的本地模型")
     parser.add_argument(
@@ -143,7 +146,7 @@ def main() -> None:
     parser = argument_parser()
     args = parser.parse_args()
     if args.fetch_model:
-        print(model_file(offline=args.offline))
+        print(model_file(args.model, offline=args.offline))
         return
     output, paths = inputs(parser, args)
     timings.seconds["启动、扫描目录与环境准备"] = timings.elapsed()
@@ -163,7 +166,9 @@ def main() -> None:
     if args.order == "smooth" and len(clips) > 1:
         clips = smooth_order(clips, timings.stage)
     elif args.order == "content":
-        clips, notes, samples = content_order(clips, args.content_step, timings.stage, offline=args.offline)
+        clips, notes, samples = content_order(
+            clips, args.content_step, timings.stage, offline=args.offline, model_name=args.model
+        )
     print(f"排序完成，自启动起 {timings.elapsed():.3f} 秒。", flush=True)
     print(f"共 {len(clips)} 段。播放顺序")
     for i, clip in enumerate(clips, 1):
@@ -178,12 +183,12 @@ def main() -> None:
         print(f"已生成 {output}")
     timings.report()
     if args.report:
-        write_report(args.report, args.order, clips, plan, copied=copied, samples=samples, timings=timings)
+        write_report(args.report, args, clips, plan, copied=copied, samples=samples, timings=timings)
 
 
 def write_report(
     path: Path,
-    order: str,
+    args: argparse.Namespace,
     clips: list[Clip],
     plan: Plan,
     *,
@@ -194,7 +199,8 @@ def write_report(
     target = plan.target
     payload = {
         "version": 1,
-        "order": order,
+        "order": args.order,
+        "model": args.model if args.order == "content" else None,
         "target": {
             "codec": target.codec,
             "size": target.size,
