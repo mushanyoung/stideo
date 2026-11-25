@@ -55,15 +55,18 @@ def regressions(reference: dict, current: dict) -> list[str]:
         raise ValueError(
             "Fixture bytes, CPU or protocol differ; run both revisions on the same host and clips."
         )
+    old, new = reference["models"], current["models"]
+    pairs = [(name, name) for name in new if name in old]
+    before, after = reference.get("default_model"), current.get("default_model")
+    if before != after and before in old and after in new:
+        pairs.append((before, after))
+    if not pairs:
+        raise ValueError("No shared model or pair of measured defaults to compare")
     issues = []
-    if not (reference["models"].keys() & current["models"].keys()):
-        raise ValueError("No shared model to compare")
-    for name, candidate in current["models"].items():
-        if name not in reference["models"]:
-            continue  # A newly added preset still has its own absolute evaluation.
-        for split, data in candidate["splits"].items():
-            previous = reference["models"][name]["splits"][split]
-            issues.extend(split_regressions(f"{name}/{split}", previous, data))
+    for before, after in pairs:
+        label = after if before == after else f"default {before} -> {after}"
+        for split, data in new[after]["splits"].items():
+            issues.extend(split_regressions(f"{label}/{split}", old[before]["splits"][split], data))
     return issues
 
 

@@ -74,3 +74,21 @@ def test_reference_catches_quality_and_cpu_regressions() -> None:
     changed["fixture_sha256"] = "different"
     with pytest.raises(ValueError, match="Fixture"):
         regressions(report, changed)
+
+
+def test_default_change_compares_the_models_users_actually_get() -> None:
+    original = {
+        "version": 1,
+        "fixture_sha256": "same",
+        "platform": "test",
+        "cpu": "test",
+        "arch": "test",
+        "threads": 4,
+        "models": {BASELINE: run(0.9, 20), "alternate": run(0.7, 10)},
+        "default_model": BASELINE,
+    }
+    changed = {**original, "default_model": "alternate"}
+    assert any("default" in issue and "mAP" in issue for issue in regressions(original, changed))
+    changed["models"] = {"new": run(0.9, 12)}
+    changed["default_model"] = "new"
+    assert not regressions(original, changed)

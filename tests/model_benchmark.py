@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 
 from stideo.media import Clip, probe
-from stideo.models import MODELS, model_file
+from stideo.models import DEFAULT_MODEL, MODELS, model_file
 from stideo.ordering import ContentRanking, content_ranking
 from stideo.vision import VisualEncoder
 from tests.model_datasets import SETS, SPLITS
@@ -253,6 +253,7 @@ def main() -> None:
         "opencv": cv2.__version__,
         "threads": min(4, os.cpu_count() or 1),
         "ffmpeg": subprocess.check_output(["ffmpeg", "-version"], text=True).splitlines()[0],
+        "default_model": DEFAULT_MODEL,
         "models": models,
         "decision": decision(models),
     }
