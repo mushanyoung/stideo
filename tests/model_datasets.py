@@ -29,10 +29,10 @@ FLOWERS = ("daisy", "dandelion", "roses", "sunflowers", "tulips")
 FLOWER_URL = "https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz"
 FLOWER_SHA = "4c54ace7911aaffe13a365c34f650e71dd5bf1be0a58b464e5a7183e3e595d9c"
 SETS = {"viewpoints": SUBJECTS, "locations": LOCATIONS, "cutaways": SUBJECTS, "flowers": FLOWERS}
-SPLITS = {"dev": 173, "holdout": 941}
+SPLITS = {"dev": 173, "holdout": 3977}
 VARIANTS = 3
 FLOWER_VIEWS = 6
-VERSION = 1
+VERSION = 2
 type Photos = dict[tuple[str, str, int], tuple[str, np.ndarray]]
 
 
@@ -62,9 +62,14 @@ def flower_images(path: Path, out: Path) -> Photos:
     selected = {}
     for i, label in enumerate(FLOWERS):
         candidates = [name for name in members if name.split("/")[1] == label]
-        picks = np.random.default_rng(2026 + i).choice(candidates, FLOWER_VIEWS * len(SPLITS), replace=False)
-        for index, name in enumerate(picks.tolist()):
-            selected[name] = (tuple(SPLITS)[index // FLOWER_VIEWS], label, index % FLOWER_VIEWS)
+        development_and_pilot = np.random.default_rng(2026 + i).choice(
+            candidates, 2 * FLOWER_VIEWS, replace=False
+        )
+        remaining = sorted(set(candidates) - set(development_and_pilot))
+        holdout = np.random.default_rng(SPLITS["holdout"] + i).choice(remaining, FLOWER_VIEWS, replace=False)
+        for split, picks in (("dev", development_and_pilot[:FLOWER_VIEWS]), ("holdout", holdout)):
+            for view, name in enumerate(picks.tolist()):
+                selected[name] = (split, label, view)
     photos = {}
     with tarfile.open(path, "r|gz") as archive:
         for member in archive:

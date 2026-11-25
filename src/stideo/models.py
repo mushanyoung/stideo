@@ -61,6 +61,15 @@ MODELS = {
         grid=7,
         family="clip",
     ),
+    "siglip2-b32-int8": Model(
+        "onnx-community/siglip2-base-patch32-256-ONNX",
+        "7efccb86b5b6601bfe9e14326e1c11b40b68d44c",
+        "vision_model_quantized.onnx",
+        "82b3e1153198db893a275b0bf08c787e88b60e3213379b2cef2efc31f9e91b9a",
+        grid=8,
+        side=256,
+        family="siglip",
+    ),
     "mobilevit-xxs": Model(
         "Xenova/mobilevit-xx-small",
         "7dce9340b0bdd8d21f013ebbaa5206979c573ad1",

@@ -1,4 +1,4 @@
-"""Adapt pinned vision backbones to a whole-frame and four-region descriptor."""
+"""Extract whole-frame and spatial descriptors from pinned vision backbones."""
 
 import os
 
@@ -10,12 +10,12 @@ from stideo.models import MODELS, Model, model_file
 NORMALIZATION = {
     "dino": ((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     "clip": ((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+    "siglip": ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     "mobilevit": ((0, 0, 0), (1, 1, 1)),
 }
 # These tensor names belong to the immutable exports in the registry.
 OUTPUT = {
     "dino": "last_hidden_state",
-    "clip": "/vision_model/encoder/layers.11/Add_1_output_0",
     "mobilevit": "/mobilevit/conv_1x1_exp/activation/Mul_output_0",
 }
 
@@ -49,11 +49,19 @@ class VisualEncoder:
             scaled.astype(np.float32) / 255 - self.mean
         ) / self.std
         self.net.setInput(np.ascontiguousarray(canvas.transpose(2, 0, 1)[None]), "pixel_values")
-        output = self.net.forward(OUTPUT[self.spec.family])[0]
-        if self.spec.family == "mobilevit":
+        if self.spec.family == "clip":
+            # This export exposes the contrastively trained projection as its sole public output.
+            return np.sqrt(0.81) * unit(self.net.forward("image_embeds")[0])
+        if self.spec.family == "siglip":
+            tokens, pooled = self.net.forward(["last_hidden_state", "pooler_output"])
+            spatial = tokens[0].reshape(grid, grid, -1)[y : y + rows, x : x + cols]
+            global_vector = pooled[0]
+        elif self.spec.family == "mobilevit":
+            output = self.net.forward(OUTPUT["mobilevit"])[0]
             spatial = output.transpose(1, 2, 0)[y : y + rows, x : x + cols]
             global_vector = spatial.mean(axis=(0, 1))
         else:
+            output = self.net.forward(OUTPUT["dino"])[0]
             spatial = output[1:].reshape(grid, grid, -1)[y : y + rows, x : x + cols]
             global_vector = output[0]
         patches = unit(spatial)
