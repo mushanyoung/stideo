@@ -25,7 +25,7 @@ def test_content_groups_subjects_across_accent_colors(corpus: Path, tmp_path: Pa
     }
     assert expected <= {frozenset(pair) for pair in pairwise(names)}
     assert sorted(names) == sorted(p.name for p in (corpus / "scenes").iterdir())
-    assert all(4 <= clip["samples"] <= 10 and clip["copied"] for clip in result["clips"])
+    assert all(12 <= clip["samples"] <= 14 and clip["copied"] for clip in result["clips"])
     # Verify the physical playback order, independently of CLI reporting.
     expected_hashes = [p["data_hash"] for name in names for p in packets(corpus / "scenes" / name)]
     assert [p["data_hash"] for p in packets(output)] == expected_hashes
@@ -39,6 +39,7 @@ def test_order_without_model(
     monkeypatch.setenv("STIDEO_OFFLINE", "1")
     result = stitch(corpus / "bridges", tmp_path / "order.mp4", "--order", order)
     assert ids(result) == [f"cut{i}.mp4" for i in sequence]
+    assert result["content_step"] is None
     assert not (tmp_path / "empty-model-cache").exists()
     assert all(x["samples"] == 0 and x["copied"] for x in result["clips"])
     assert ("片段首尾分析" in result["stage_seconds"]) == (order == "smooth")
@@ -61,6 +62,7 @@ def test_cuts_between_regular_samples(
     corpus: Path, tmp_path: Path, step: str, minimum: int, maximum: int
 ) -> None:
     report = stitch(corpus / "cuts", tmp_path / "cuts.mp4", "--content-step", step, dry=True)
+    assert report["content_step"] == float(step)
     assert minimum <= report["clips"][0]["samples"] <= maximum
     assert report["clips"][0]["copied"] is None
 

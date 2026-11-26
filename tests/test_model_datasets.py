@@ -28,19 +28,28 @@ def test_retrieval_through_production_ranking(model_clips: Path, name: str) -> N
     assert metrics["adjacency"] >= 0.75
 
 
-def test_model_option_and_speed_workload(model_clips: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("sampling_args", "interval", "static_frames"),
+    [pytest.param((), 0.5, 6, id="default"), pytest.param(("--content-step", "1"), 1.0, 3, id="one-second")],
+)
+def test_model_option_and_speed_workload(
+    model_clips: Path, tmp_path: Path, sampling_args: tuple[str, ...], interval: float, static_frames: int
+) -> None:
     report = stitch(
         model_clips / "dev" / "speed",
         tmp_path / "speed.mp4",
         "--model",
         "mobilevit-xxs",
         "--offline",
+        *sampling_args,
         dry=True,
     )
     samples = {c["name"]: c["samples"] for c in report["clips"]}
     assert report["model"] == "mobilevit-xxs"
-    assert samples["cuts.mp4"] > samples["static.mp4"] >= 3
-    assert samples["portrait.mp4"] >= 3
+    assert report["content_step"] == interval
+    assert samples["static.mp4"] == static_frames
+    assert samples["cuts.mp4"] > static_frames
+    assert samples["portrait.mp4"] >= static_frames
 
 
 def test_generation_reuses_complete_cases(model_clips: Path) -> None:
