@@ -13,6 +13,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+from stideo.ordering import DEFAULT_CONTENT_STEP
 from tests import datasets
 
 CASES = {
@@ -22,7 +23,8 @@ CASES = {
     **{f"mixed-{codec}": ("codecs", "natural", codec) for codec in ("auto", "h264", "hevc", "av1")},
 }
 # Expensive stages worth comparing in addition to process wall time.
-TIMED_STAGES = ("取样解码与画面特征提取", "片段首尾分析", "视频转码", "成片接缝验证")
+VISUAL_STAGE = "取样解码与画面特征提取"
+TIMED_STAGES = (VISUAL_STAGE, "片段首尾分析", "视频转码", "成片接缝验证")
 
 
 def fingerprint() -> dict:
@@ -37,39 +39,51 @@ def fingerprint() -> dict:
     }
 
 
+def measure_case(
+    executable: str, root: Path, directory: Path, case: str, repeats: int, step: float | None = None
+) -> dict:
+    dataset, order, codec = CASES[case]
+    command = [executable, str(root / dataset), "--offline", "--order", order, "--codec", codec]
+    prefix = case
+    if step is not None:
+        command.extend(["--content-step", str(step)])
+        prefix = f"{case}-step-{step:g}"
+    samples = defaultdict(list)
+    for trial in range(repeats):
+        output = directory / f"{prefix}-{trial}.mp4"
+        report = output.with_suffix(".json")
+        start = time.perf_counter()
+        completed = subprocess.run(
+            [*command, "-o", str(output), "--report", str(report)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        wall = time.perf_counter() - start
+        if completed.returncode:
+            raise ValueError(f"{case} failed\n{completed.stdout}\n{completed.stderr}")
+        data = json.loads(report.read_text(encoding="utf-8"))
+        samples["wall_seconds"].append(wall)
+        samples["analyzed_frames"].append(sum(x["samples"] for x in data["clips"]))
+        samples["copied_seconds"].append(sum(x["video_seconds"] for x in data["clips"] if x["copied"]))
+        for name in TIMED_STAGES:
+            samples[name].append(data["stage_seconds"].get(name, 0.0))
+        if order == "content":
+            # Releases predating this report field defaulted to one second.
+            samples["content_step"].append(data.get("content_step", 1.0 if step is None else step))
+        output.unlink()
+    return {key: statistics.median(values) for key, values in samples.items()}
+
+
 def measure(executable: str, root: Path, directory: Path, repeats: int) -> dict:
     results = {}
-    for case, (dataset, order, codec) in CASES.items():
-        samples = defaultdict(list)
-        for trial in range(repeats):
-            output = directory / f"{case}-{trial}.mp4"
-            report = output.with_suffix(".json")
-            command = [
-                executable,
-                str(root / dataset),
-                "--offline",
-                "--order",
-                order,
-                "--codec",
-                codec,
-                "-o",
-                str(output),
-                "--report",
-                str(report),
-            ]
-            start = time.perf_counter()
-            completed = subprocess.run(command, capture_output=True, text=True, check=False)
-            wall = time.perf_counter() - start
-            if completed.returncode:
-                raise ValueError(f"{case} failed\n{completed.stdout}\n{completed.stderr}")
-            data = json.loads(report.read_text(encoding="utf-8"))
-            samples["wall_seconds"].append(wall)
-            samples["analyzed_frames"].append(sum(x["samples"] for x in data["clips"]))
-            samples["copied_seconds"].append(sum(x["video_seconds"] for x in data["clips"] if x["copied"]))
-            for name in TIMED_STAGES:
-                samples[name].append(data["stage_seconds"].get(name, 0.0))
-            output.unlink()
-        results[case] = {key: statistics.median(values) for key, values in samples.items()}
+    for case in CASES:
+        values = measure_case(executable, root, directory, case, repeats)
+        if "content_step" in values and values["content_step"] != DEFAULT_CONTENT_STEP:
+            values["matched_sampling"] = measure_case(
+                executable, root, directory, case, repeats, step=DEFAULT_CONTENT_STEP
+            )
+        results[case] = values
     return results
 
 
@@ -84,8 +98,11 @@ def regressions(reference: dict, actual: dict, tolerance: float) -> list[str]:
     failures = []
     for case, values in actual["cases"].items():
         earlier = reference["cases"][case]
+        matched = earlier.get("matched_sampling", earlier)
+        if matched.get("content_step") != values.get("content_step"):
+            matched = earlier
         for metric in ("wall_seconds", *TIMED_STAGES):
-            baseline = earlier[metric]
+            baseline = (matched if metric == VISUAL_STAGE else earlier)[metric]
             if values[metric] > baseline + max(0.35, baseline * tolerance):
                 failures.append(f"{case} {metric}: {baseline:.3f} -> {values[metric]:.3f} s")
         if values["copied_seconds"] < earlier["copied_seconds"] - 0.001:

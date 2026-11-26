@@ -13,7 +13,7 @@ lazy from fractions import Fraction
 from stideo.export import CODECS, Plan, build_plan, render
 from stideo.media import Clip, canvas, common_fps, probe, ratio
 from stideo.models import DEFAULT_MODEL, MODELS, model_file
-from stideo.ordering import EDGE_SECONDS, EXACT_LIMIT, content_order, smooth_order
+from stideo.ordering import DEFAULT_CONTENT_STEP, EDGE_SECONDS, EXACT_LIMIT, content_order, smooth_order
 from stideo.timing import Timings
 
 VIDEO_EXTENSIONS = {
@@ -77,9 +77,9 @@ def argument_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--content-step",
         type=float,
-        default=1.0,
+        default=DEFAULT_CONTENT_STEP,
         metavar="秒",
-        help="content 模式的画面取样间隔，默认 1 秒，切镜处额外取样，0 表示逐帧提取视觉特征",
+        help="content 模式的画面取样间隔，默认 %(default)g 秒，切镜处额外取样，0 表示逐帧提取视觉特征",
     )
     parser.add_argument(
         "-o", "--output", type=Path, help="输出 MP4 路径，默认保存到素材目录下的「合辑」子目录"
@@ -201,6 +201,7 @@ def write_report(
         "version": 1,
         "order": args.order,
         "model": args.model if args.order == "content" else None,
+        "content_step": args.content_step if args.order == "content" else None,
         "target": {
             "codec": target.codec,
             "size": target.size,

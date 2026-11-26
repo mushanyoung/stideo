@@ -5,6 +5,7 @@ import contextlib
 import hashlib
 import io
 import json
+import math
 import multiprocessing
 import os
 import platform
@@ -20,7 +21,7 @@ import numpy as np
 
 from stideo.media import Clip, probe
 from stideo.models import DEFAULT_MODEL, MODELS, model_file
-from stideo.ordering import ContentRanking, content_ranking
+from stideo.ordering import DEFAULT_CONTENT_STEP, ContentRanking, content_ranking
 from stideo.vision import VisualEncoder
 from tests.model_datasets import SETS, SPLITS
 from tests.model_metrics import quality, regressions
@@ -42,10 +43,10 @@ def inputs(paths: list[Path]) -> list[Clip]:
     return result
 
 
-def rank(paths: list[Path], model: str) -> tuple[ContentRanking, float]:
+def rank(paths: list[Path], model: str, step: float = DEFAULT_CONTENT_STEP) -> tuple[ContentRanking, float]:
     start = time.perf_counter()
     with contextlib.redirect_stdout(io.StringIO()):
-        result = content_ranking(inputs(paths), 1.0, offline=True, model_name=model)
+        result = content_ranking(inputs(paths), step, offline=True, model_name=model)
     return result, time.perf_counter() - start
 
 
@@ -77,7 +78,7 @@ def timing_frames(root: Path, split: str) -> list[np.ndarray]:
     return frames
 
 
-def timing(root: Path, split: str, model: str, rounds: int) -> dict:
+def timing(root: Path, split: str, model: str, rounds: int, step: float = DEFAULT_CONTENT_STEP) -> dict:
     frames = timing_frames(root, split)
     start = time.perf_counter()
     encoder = VisualEncoder.load(model, offline=True)
@@ -97,7 +98,7 @@ def timing(root: Path, split: str, model: str, rounds: int) -> dict:
     paths = sorted((root / split / "speed").glob("*.mp4"))
     times = []
     for _ in range(rounds):
-        result, elapsed = rank(paths, model)
+        result, elapsed = rank(paths, model, step)
         times.append(elapsed)
     return {
         "load_seconds": load,
@@ -111,14 +112,14 @@ def timing(root: Path, split: str, model: str, rounds: int) -> dict:
     }
 
 
-def scores(root: Path, split: str, names: list[str], model: str) -> dict:
+def scores(root: Path, split: str, names: list[str], model: str, step: float = DEFAULT_CONTENT_STEP) -> dict:
     cases = {}
     for name in names:
         directory = root / split / name
         manifest = json.loads((directory / "truth.json").read_text(encoding="utf-8"))
         items = sorted(manifest["clips"], key=lambda x: x["file"])
         paths = [directory / clip["file"] for clip in items]
-        ranking, elapsed = rank(paths, model)
+        ranking, elapsed = rank(paths, model, step)
         cases[name] = {
             **quality(ranking.costs, ranking.path, [x["label"] for x in items]),
             "order": [paths[i].name for i in ranking.path],
@@ -136,13 +137,16 @@ def peak_memory() -> float | None:
     )
 
 
-def evaluate(job: tuple[Path, str, list[str], list[str], int, bool]) -> tuple[str, dict]:
-    root, model, names, splits, rounds, offline = job
+def evaluate(job: tuple[Path, str, list[str], list[str], int, float, bool]) -> tuple[str, dict]:
+    root, model, names, splits, rounds, step, offline = job
     weights = model_file(model, offline=offline)
     result = {}
     for split in splits:
         sys.stderr.write(f"Scoring {model} on {split}\n")
-        result[split] = {**scores(root, split, names, model), "timing": timing(root, split, model, rounds)}
+        result[split] = {
+            **scores(root, split, names, model, step),
+            "timing": timing(root, split, model, rounds, step),
+        }
     return model, {"weights_bytes": weights.stat().st_size, "peak_rss_mib": peak_memory(), "splits": result}
 
 
@@ -220,10 +224,18 @@ def main() -> None:
     parser.add_argument("--splits", nargs="+", choices=SPLITS, default=list(SPLITS))
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument(
+        "--content-step",
+        type=float,
+        default=DEFAULT_CONTENT_STEP,
+        help="Seconds between visual samples (default %(default)g, zero selects every frame).",
+    )
+    parser.add_argument(
         "--reference", type=Path, help="Fail on quality or timing regressions against a previous report."
     )
     parser.add_argument("--offline", action="store_true")
     args = parser.parse_args()
+    if not math.isfinite(args.content_step) or args.content_step < 0:
+        parser.error("--content-step must be a finite non-negative number of seconds.")
     if args.rounds < 1 or args.output.exists():
         parser.error("Use a positive round count and a new output file.")
     if not args.sets:
@@ -236,7 +248,7 @@ def main() -> None:
         parser.error("Generate labelled fixtures first.")
     fingerprint = fixture_hash(args.fixtures, args.sets, args.splits)
     jobs = [
-        (args.fixtures, m, args.sets, args.splits, args.rounds, args.offline)
+        (args.fixtures, m, args.sets, args.splits, args.rounds, args.content_step, args.offline)
         for m in dict.fromkeys(args.models)
     ]
     with ProcessPoolExecutor(
@@ -254,6 +266,7 @@ def main() -> None:
         "threads": min(4, os.cpu_count() or 1),
         "ffmpeg": subprocess.check_output(["ffmpeg", "-version"], text=True).splitlines()[0],
         "default_model": DEFAULT_MODEL,
+        "content_step": args.content_step,
         "models": models,
         "decision": decision(models),
     }

@@ -2,7 +2,20 @@
 
 更换 `--model` 会改变 `content` 的视觉特征。所有候选共用整段取样、色彩、构图、纹理、光流、声音、接缝评分和路径求解器。编码策略保持独立。
 
-## 实测结果
+## 默认取样间隔
+
+Stideo 默认每 0.5 秒取一个画面。在 Apple M4 上用默认模型对照了两个间隔，两档都在切镜处额外取样。下表的质量指标按四类素材等权平均，完整排序时间取留出集中三段计时素材的三次中位数。
+
+| 取样间隔 | 开发集同类接缝达成率 | 留出集同类接缝达成率 | 留出集检索 mAP | 三段素材排序 |
+| --- | ---: | ---: | ---: | ---: |
+| 1 秒 | 72.0% | 74.1% | 74.0% | 1.06 秒 |
+| 0.5 秒 | 78.25% | 83.5% | 79.9% | 1.21 秒 |
+
+留出集的插入镜头组最多可形成 8 个同类接缝，半秒取样将实际达成数从 2 个提高到 5 个。其余三组各自形成的同类接缝数持平。将插镜在片段中的位置前后移动三分之一秒做三轮对照，半秒间隔每轮都形成了更多同类接缝。
+
+在 Ubuntu x86-64 上完整导出 `scenes` 的 6 段素材（共 36 秒）时，两个间隔分别取了 36 帧和 72 帧，三次导出的中位耗时从 8.76 秒升至 11.43 秒。CPU 分析时间优先时可选 `--content-step 1`。[Linux 导出计时报告](https://github.com/mushanyoung/stideo/actions/runs/45729028703)
+
+## 七种模型在 1 秒取样间隔下的表现
 
 默认使用 **DINOv2 Small INT8**。2026-11-25 在 Apple M4 上比较七个配置时，六个候选在开发集上都未达到下文的切换门槛。下表给出独立留出集的结果。质量按四个数据集等权平均，排序耗时是对三段计时素材完整排序三次的中位数。环境为 Python 3.15.2、OpenCV 5.1.0、FFmpeg 9.1、CPU 四线程，权重均已缓存。[完整报告及各组播放顺序](benchmarks/apple-m4.json)
 
@@ -28,7 +41,10 @@
 uv sync --locked
 uv run python -m tests.model_datasets build/model-datasets --sets viewpoints locations cutaways flowers
 uv run python -m tests.model_benchmark build/model-datasets --output build/model-report.json
+uv run python -m tests.model_benchmark build/model-datasets --content-step 1 --output build/model-report-1s.json
 ```
+
+评测器与正式 CLI 共用默认取样间隔，JSON 的 `content_step` 记录本次设置，单位为秒。使用 `--models dinov2-small-int8` 可以只比较默认模型在两档间隔下的表现。
 
 生成器默认只制作程序绘制的素材。加入 `flowers` 会下载并校验约 218 MiB 的 TensorFlow 花卉照片归档。可以用 `--flower-archive PATH` 复用已有归档，输出目录里的 `FLOWER-CREDITS.txt` 保留原作者和许可信息。重复对同一目录运行可补齐其他组或另一套划分。评测器默认使用两个划分中都已生成的数据集。[原始数据集](https://www.tensorflow.org/datasets/catalog/tf_flowers) · [归档校验和](https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/datasets/tf_flowers/checksums.tsv)
 
